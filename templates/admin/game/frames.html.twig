@@ -1,0 +1,286 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    Framy meczu: {{ game }}
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Informacje o meczu</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Data:</strong> {{ game.gameDate|date('d.m.Y H:i') }}</p>
+                            <p><strong>Liga:</strong> {{ game.league.name }}</p>
+                            <p><strong>Status:</strong>
+                                <span class="badge bg-{{ game.status.value == 'finished' ? 'success' : (game.status.value == 'in_progress' ? 'primary' : 'secondary') }}">
+                                {{ game.status.value|upper }}
+                            </span>
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            {% if game.isTeamGame %}
+                                <p><strong>Typ:</strong> Gra drużynowa</p>
+                                <p><strong>{{ game.teamA.name }}:</strong> {{ game.getTeamAScore() }}</p>
+                                <p><strong>{{ game.teamB.name }}:</strong> {{ game.getTeamBScore() }}</p>
+                                {% if game.status.value == 'finished' %}
+                                    <p><strong>Zwycięzca:</strong>
+                                        <span class="badge bg-success">{{ game.getWinner() }}</span>
+                                    </p>
+                                {% endif %}
+                            {% else %}
+                                <p><strong>Typ:</strong> Gra indywidualna</p>
+                                {% if game.status.value == 'finished' %}
+                                    <p><strong>Zwycięzca:</strong>
+                                        <span class="badge bg-success">{{ game.getWinner() }}</span>
+                                    </p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            {% if structureInfo.hasFrames %}
+                                <div class="alert alert-info mb-0">
+                                    <h6 class="mb-2"><i class="fa fa-info-circle"></i> Struktura meczu</h6>
+                                    <p class="mb-1"><strong>Framów:</strong> {{ structureInfo.framesCount }}</p>
+                                    <p class="mb-1"><strong>Gier:</strong> {{ structureInfo.gamesCount }}</p>
+                                    <p class="mb-1"><strong>Torów:</strong> {{ structureInfo.lanesCount }} ({{ structureInfo.lanes|join(', ') }})</p>
+                                    <p class="mb-0"><strong>Graczy:</strong> {{ structureInfo.playersCount }}</p>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning mb-0">
+                                    <i class="fa fa-exclamation-triangle"></i> Brak wygenerowanej struktury
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if frames|length == 0 %}
+                <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    Ten mecz nie ma jeszcze wygenerowanych framów.
+                    <a href="{{ ea_url().setAction('generateGame').setController('App\\Controller\\Admin\\GameCrudController').setEntityId(game.id) }}" class="btn btn-success btn-sm ms-3">
+                        <i class="fa fa-magic"></i> Generuj framy
+                    </a>
+                </div>
+            {% else %}
+                {# Grupuj framy po grach (gameNumber) #}
+                {% set framesByGame = {} %}
+                {% for frame in frames %}
+                    {% set gameKey = frame.gameNumber %}
+                    {% if framesByGame[gameKey] is not defined %}
+                        {% set framesByGame = framesByGame|merge({(gameKey): []}) %}
+                    {% endif %}
+                    {% set framesByGame = framesByGame|merge({(gameKey): framesByGame[gameKey]|merge([frame])}) %}
+                {% endfor %}
+
+                {% for gameNumber, gameFrames in framesByGame %}
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h4>Gra {{ gameNumber }}</h4>
+                        </div>
+                        <div class="card-body">
+                            {# Grupuj po torach #}
+                            {% set framesByLane = {} %}
+                            {% for frame in gameFrames %}
+                                {% set laneKey = frame.laneNumber %}
+                                {% if framesByLane[laneKey] is not defined %}
+                                    {% set framesByLane = framesByLane|merge({(laneKey): []}) %}
+                                {% endif %}
+                                {% set framesByLane = framesByLane|merge({(laneKey): framesByLane[laneKey]|merge([frame])}) %}
+                            {% endfor %}
+
+                            {% for laneNumber, laneFrames in framesByLane %}
+                                <div class="lane-section mb-4">
+                                    <h5 class="border-bottom pb-2">Tor {{ laneNumber }}</h5>
+
+                                    {# Pobierz graczy #}
+                                    {% set firstFrame = laneFrames|first %}
+
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered bowling-scorecard">
+                                            <thead>
+                                            <tr>
+                                                <th width="150">Gracz</th>
+                                                {% for i in 1..10 %}
+                                                    <th class="text-center">{{ i }}</th>
+                                                {% endfor %}
+                                                <th class="text-center bg-light">TOTAL</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {# Team A Players #}
+                                            {% for player in firstFrame.teamAPlayers %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ player.fullName }}</strong>
+                                                        {% if game.teamA %}
+                                                            <br><small class="text-muted">{{ game.teamA.name }}</small>
+                                                        {% endif %}
+                                                    </td>
+                                                    {% for frame in laneFrames|sort((a, b) => a.frameNumber <=> b.frameNumber) %}
+                                                        <td class="text-center frame-cell {{ frame.isComplete ? 'complete' : 'incomplete' }}">
+                                                            <div class="frame-rolls">
+                                                                {% set roll1 = frame.getPlayerRoll(player, 1) %}
+                                                                {% set roll2 = frame.getPlayerRoll(player, 2) %}
+                                                                {% set roll3 = frame.getPlayerRoll(player, 3) %}
+
+                                                                <small>
+                                                                    {% if roll1 %}
+                                                                        {% if roll1.isStrike %}<span class="strike">X</span>
+                                                                        {% elseif roll1.pinsKnocked == 0 %}-
+                                                                        {% else %}{{ roll1.pinsKnocked }}
+                                                                        {% endif %}
+                                                                    {% else %}-{% endif %}
+                                                                    |
+                                                                    {% if roll2 %}
+                                                                        {% if roll2.isSpare %}<span class="spare">/</span>
+                                                                        {% elseif roll2.pinsKnocked == 0 %}-
+                                                                        {% else %}{{ roll2.pinsKnocked }}
+                                                                        {% endif %}
+                                                                    {% else %}-{% endif %}
+                                                                    {% if frame.frameNumber == 10 and roll3 %}
+                                                                        |{% if roll3.pinsKnocked == 10 %}<span class="strike">X</span>
+                                                                    {% elseif roll3.pinsKnocked == 0 %}-
+                                                                    {% else %}{{ roll3.pinsKnocked }}{% endif %}
+                                                                    {% endif %}
+                                                                </small>
+                                                            </div>
+                                                            <div class="frame-score">
+                                                                <strong>{{ frame.calculatePlayerScore(player) }}</strong>
+                                                            </div>
+                                                        </td>
+                                                    {% endfor %}
+                                                    <td class="text-center bg-light">
+                                                        <strong>{{ game.getPlayerTotalScore(player) }}</strong>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+
+                                            {# Team B Players #}
+                                            {% for player in firstFrame.teamBPlayers %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ player.fullName }}</strong>
+                                                        {% if game.teamB %}
+                                                            <br><small class="text-muted">{{ game.teamB.name }}</small>
+                                                        {% endif %}
+                                                    </td>
+                                                    {% for frame in laneFrames|sort((a, b) => a.frameNumber <=> b.frameNumber) %}
+                                                        <td class="text-center frame-cell {{ frame.isComplete ? 'complete' : 'incomplete' }}">
+                                                            <div class="frame-rolls">
+                                                                {% set roll1 = frame.getPlayerRoll(player, 1) %}
+                                                                {% set roll2 = frame.getPlayerRoll(player, 2) %}
+                                                                {% set roll3 = frame.getPlayerRoll(player, 3) %}
+
+                                                                <small>
+                                                                    {% if roll1 %}
+                                                                        {% if roll1.isStrike %}<span class="strike">X</span>
+                                                                        {% elseif roll1.pinsKnocked == 0 %}-
+                                                                        {% else %}{{ roll1.pinsKnocked }}
+                                                                        {% endif %}
+                                                                    {% else %}-{% endif %}
+                                                                    |
+                                                                    {% if roll2 %}
+                                                                        {% if roll2.isSpare %}<span class="spare">/</span>
+                                                                        {% elseif roll2.pinsKnocked == 0 %}-
+                                                                        {% else %}{{ roll2.pinsKnocked }}
+                                                                        {% endif %}
+                                                                    {% else %}-{% endif %}
+                                                                    {% if frame.frameNumber == 10 and roll3 %}
+                                                                        |{% if roll3.pinsKnocked == 10 %}<span class="strike">X</span>
+                                                                    {% elseif roll3.pinsKnocked == 0 %}-
+                                                                    {% else %}{{ roll3.pinsKnocked }}{% endif %}
+                                                                    {% endif %}
+                                                                </small>
+                                                            </div>
+                                                            <div class="frame-score">
+                                                                <strong>{{ frame.calculatePlayerScore(player) }}</strong>
+                                                            </div>
+                                                        </td>
+                                                    {% endfor %}
+                                                    <td class="text-center bg-light">
+                                                        <strong>{{ game.getPlayerTotalScore(player) }}</strong>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="mt-3">
+                                        <a href="{{ ea_url().setAction('enterScores').setController('App\\Controller\\Admin\\FrameCrudController').setEntityId(laneFrames|first.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fa fa-edit"></i> Wprowadź wyniki
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="mt-4">
+                <a href="{{ ea_url().setAction('index').setController('App\\Controller\\Admin\\GameCrudController') }}" class="btn btn-secondary">
+                    <i class="fa fa-arrow-left"></i> Powrót do listy meczów
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .bowling-scorecard {
+            font-size: 0.9rem;
+        }
+
+        .bowling-scorecard th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .frame-cell {
+            padding: 0.5rem;
+            min-width: 60px;
+        }
+
+        .frame-cell.complete {
+            background-color: #d4edda;
+        }
+
+        .frame-cell.incomplete {
+            background-color: #fff3cd;
+        }
+
+        .frame-rolls {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .frame-score {
+            font-size: 1.1rem;
+        }
+
+        .strike {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .spare {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        .lane-section {
+            border: 1px solid #dee2e6;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            background-color: #f8f9fa;
+        }
+    </style>
+{% endblock %}

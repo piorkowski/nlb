@@ -1,0 +1,198 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    Generuj strukturę meczu: {{ game }}
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Konfiguracja meczu</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ path('admin_game_process_generate', {gameId: game.id}) }}" id="generateForm">
+                        <div class="mb-4">
+                            <h5>Informacje podstawowe</h5>
+                            <p><strong>Data:</strong> {{ game.gameDate|date('d.m.Y H:i') }}</p>
+                            <p><strong>Liga:</strong> {{ game.league.name }}</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label"><strong>Typ gry</strong></label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="gameType" id="gameTypeIndividual" value="individual"
+                                    {{ game.teamA is null and game.teamB is null ? 'checked' : '' }}>
+                                <label class="form-check-label" for="gameTypeIndividual">
+                                    Gra indywidualna (1 vs 1)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="gameType" id="gameTypeTeam" value="team"
+                                    {{ game.teamA is not null and game.teamB is not null ? 'checked' : '' }}>
+                                <label class="form-check-label" for="gameTypeTeam">
+                                    Gra drużynowa (3 vs 3)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Konfiguracja gry indywidualnej -->
+                        <div id="individualConfig" class="config-section" style="display: none;">
+                            <h5>Gracze</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Gracz A</label>
+                                        <select name="individual[playerA]" class="form-select" required>
+                                            <option value="">Wybierz gracza...</option>
+                                            {# Tu należy dodać listę graczy z bazy #}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Gracz B</label>
+                                        <select name="individual[playerB]" class="form-select" required>
+                                            <option value="">Wybierz gracza...</option>
+                                            {# Tu należy dodać listę graczy z bazy #}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Początkowy tor</label>
+                                <input type="number" name="individual[startLane]" class="form-control" value="1" min="1" max="50">
+                                <small class="text-muted">Dwumecz - gra będzie na torze X i X+1</small>
+                            </div>
+                        </div>
+
+                        <!-- Konfiguracja gry drużynowej -->
+                        <div id="teamConfig" class="config-section" style="display: none;">
+                            <h5>Drużyny</h5>
+
+                            {% if game.teamA and game.teamB %}
+                                <div class="alert alert-info">
+                                    <p><strong>Drużyna A:</strong> {{ game.teamA.name }}</p>
+                                    <p><strong>Drużyna B:</strong> {{ game.teamB.name }}</p>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    Najpierw ustaw drużyny w danych meczu!
+                                </div>
+                            {% endif %}
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Zawodnicy drużyny A</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Zawodnik 1</label>
+                                        <select name="team[teamA][player1]" class="form-select" required>
+                                            <option value="">Wybierz gracza...</option>
+                                            {# Lista graczy z drużyny A #}
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Zawodnik 2</label>
+                                        <select name="team[teamA][player2]" class="form-select" required>
+                                            <option value="">Wybierz gracza...</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Zawodnik 3</label>
+                                        <select name="team[teamA][player3]" class="form-select" required>
+                                            <option value="">Wybierz gracza...</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <h6>Zawodnicy drużyny B</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Zawodnik 1</label>
+                                        <select name="team[teamB][player1]" class="form-select" required>
+                                            <option value="">Wybierz gracza...</option>
+                                            {# Lista graczy z drużyny B #}
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Zawodnik 2</label>
+                                        <select name="team[teamB][player2]" class="form-select" required>
+                                            <option value="">Wybierz gracza...</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Zawodnik 3</label>
+                                        <select name="team[teamB][player3]" class="form-select" required>
+                                            <option value="">Wybierz gracza...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Początkowy tor</label>
+                                <input type="number" name="team[startLane]" class="form-control" value="1" min="1" max="50">
+                                <small class="text-muted">3 pary graczy, każda gra dwumecz. Będą użyte tory: X, X+1, X+2</small>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="_token" value="{{ csrf_token('game_generate_' ~ game.id) }}">
+
+                        <div class="form-actions mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fa fa-magic"></i> Generuj framy i strukturę meczu
+                            </button>
+                            <a href="{{ ea_url().setAction('detail').setController('App\\Controller\\Admin\\GameCrudController').setEntityId(game.id) }}" class="btn btn-secondary">
+                                Anuluj
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const individualRadio = document.getElementById('gameTypeIndividual');
+            const teamRadio = document.getElementById('gameTypeTeam');
+            const individualConfig = document.getElementById('individualConfig');
+            const teamConfig = document.getElementById('teamConfig');
+
+            function toggleConfig() {
+                if (individualRadio.checked) {
+                    individualConfig.style.display = 'block';
+                    teamConfig.style.display = 'none';
+                    // Wyłącz required dla team
+                    teamConfig.querySelectorAll('[required]').forEach(el => el.removeAttribute('required'));
+                    // Włącz required dla individual
+                    individualConfig.querySelectorAll('select').forEach(el => el.setAttribute('required', 'required'));
+                } else {
+                    individualConfig.style.display = 'none';
+                    teamConfig.style.display = 'block';
+                    // Wyłącz required dla individual
+                    individualConfig.querySelectorAll('[required]').forEach(el => el.removeAttribute('required'));
+                    // Włącz required dla team
+                    teamConfig.querySelectorAll('select').forEach(el => el.setAttribute('required', 'required'));
+                }
+            }
+
+            individualRadio.addEventListener('change', toggleConfig);
+            teamRadio.addEventListener('change', toggleConfig);
+
+            // Ustaw początkowy stan
+            toggleConfig();
+        });
+    </script>
+
+    <style>
+        .config-section {
+            border: 1px solid #dee2e6;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            background-color: #f8f9fa;
+        }
+    </style>
+{% endblock %}

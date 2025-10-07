@@ -1,0 +1,316 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    Wyniki - Fram {{ frame.frameNumber }} (Gra {{ frame.gameNumber }}, Tor {{ frame.laneNumber }})
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Mecz: {{ frame.game }}</h3>
+                    <p class="text-muted">
+                        Fram {{ frame.frameNumber }} | Gra {{ frame.gameNumber }} | Tor {{ frame.laneNumber }}
+                    </p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Team A -->
+                        <div class="col-md-6">
+                            <h4 class="border-bottom pb-2">
+                                {% if frame.teamA %}
+                                    {{ frame.teamA.name }}
+                                {% else %}
+                                    Team A
+                                {% endif %}
+                                <span class="badge bg-primary float-end">
+                                Wynik: {{ frame.getTeamAScore() }}
+                            </span>
+                            </h4>
+
+                            {% for player in frame.teamAPlayers %}
+                                <div class="player-scores mb-4 p-3 border rounded">
+                                    <h5>{{ player.fullName }}</h5>
+
+                                    <div class="bowling-display mb-3">
+                                        {% set roll1 = frame.getPlayerRoll(player, 1) %}
+                                        {% set roll2 = frame.getPlayerRoll(player, 2) %}
+                                        {% set roll3 = frame.getPlayerRoll(player, 3) %}
+
+                                        <div class="d-flex gap-2">
+                                            <div class="roll-box">
+                                                <div class="roll-label">Rzut 1</div>
+                                                <div class="roll-value {{ roll1 and roll1.isStrike ? 'strike' : '' }}">
+                                                    {% if roll1 %}
+                                                        {% if roll1.isStrike %}
+                                                            <span class="strike-symbol">X</span>
+                                                        {% elseif roll1.pinsKnocked == 0 %}
+                                                            <span class="miss-symbol">-</span>
+                                                        {% else %}
+                                                            {{ roll1.pinsKnocked }}
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="roll-box">
+                                                <div class="roll-label">Rzut 2</div>
+                                                <div class="roll-value {{ roll2 and roll2.isSpare ? 'spare' : '' }}">
+                                                    {% if roll2 %}
+                                                        {% if roll2.isSpare %}
+                                                            <span class="spare-symbol">/</span>
+                                                        {% elseif roll2.pinsKnocked == 0 %}
+                                                            <span class="miss-symbol">-</span>
+                                                        {% else %}
+                                                            {{ roll2.pinsKnocked }}
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            {% if frame.frameNumber == 10 %}
+                                                <div class="roll-box">
+                                                    <div class="roll-label">Rzut 3</div>
+                                                    <div class="roll-value">
+                                                        {% if roll3 %}
+                                                            {% if roll3.pinsKnocked == 10 %}
+                                                                <span class="strike-symbol">X</span>
+                                                            {% elseif roll3.pinsKnocked == 0 %}
+                                                                <span class="miss-symbol">-</span>
+                                                            {% else %}
+                                                                {{ roll3.pinsKnocked }}
+                                                            {% endif %}
+                                                        {% else %}
+                                                            <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="score-summary">
+                                        <strong>Wynik framu:</strong>
+                                        <span class="badge bg-info">{{ frame.calculatePlayerScore(player) }}</span>
+
+                                        {% if frame.isPlayerStrike(player) %}
+                                            <span class="badge bg-success ms-2">STRIKE!</span>
+                                        {% elseif frame.isPlayerSpare(player) %}
+                                            <span class="badge bg-warning">SPARE</span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if roll1 and roll1.notes %}
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fa fa-comment"></i> {{ roll1.notes }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+
+                            {% if frame.teamAPlayers|length > 0 %}
+                                <div class="alert alert-primary">
+                                    <strong>Statystyki Team A:</strong><br>
+                                    Strike'i: {{ frame.getTeamAStrikes() }}<br>
+                                    Spare'y: {{ frame.getTeamASpares() }}<br>
+                                    Kompletny: {{ frame.isTeamAComplete() ? 'Tak' : 'Nie' }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Team B -->
+                        <div class="col-md-6">
+                            <h4 class="border-bottom pb-2">
+                                {% if frame.teamB %}
+                                    {{ frame.teamB.name }}
+                                {% else %}
+                                    Team B
+                                {% endif %}
+                                <span class="badge bg-primary float-end">
+                                Wynik: {{ frame.getTeamBScore() }}
+                            </span>
+                            </h4>
+
+                            {% for player in frame.teamBPlayers %}
+                                <div class="player-scores mb-4 p-3 border rounded">
+                                    <h5>{{ player.fullName }}</h5>
+
+                                    <div class="bowling-display mb-3">
+                                        {% set roll1 = frame.getPlayerRoll(player, 1) %}
+                                        {% set roll2 = frame.getPlayerRoll(player, 2) %}
+                                        {% set roll3 = frame.getPlayerRoll(player, 3) %}
+
+                                        <div class="d-flex gap-2">
+                                            <div class="roll-box">
+                                                <div class="roll-label">Rzut 1</div>
+                                                <div class="roll-value {{ roll1 and roll1.isStrike ? 'strike' : '' }}">
+                                                    {% if roll1 %}
+                                                        {% if roll1.isStrike %}
+                                                            <span class="strike-symbol">X</span>
+                                                        {% elseif roll1.pinsKnocked == 0 %}
+                                                            <span class="miss-symbol">-</span>
+                                                        {% else %}
+                                                            {{ roll1.pinsKnocked }}
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="roll-box">
+                                                <div class="roll-label">Rzut 2</div>
+                                                <div class="roll-value {{ roll2 and roll2.isSpare ? 'spare' : '' }}">
+                                                    {% if roll2 %}
+                                                        {% if roll2.isSpare %}
+                                                            <span class="spare-symbol">/</span>
+                                                        {% elseif roll2.pinsKnocked == 0 %}
+                                                            <span class="miss-symbol">-</span>
+                                                        {% else %}
+                                                            {{ roll2.pinsKnocked }}
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            {% if frame.frameNumber == 10 %}
+                                                <div class="roll-box">
+                                                    <div class="roll-label">Rzut 3</div>
+                                                    <div class="roll-value">
+                                                        {% if roll3 %}
+                                                            {% if roll3.pinsKnocked == 10 %}
+                                                                <span class="strike-symbol">X</span>
+                                                            {% elseif roll3.pinsKnocked == 0 %}
+                                                                <span class="miss-symbol">-</span>
+                                                            {% else %}
+                                                                {{ roll3.pinsKnocked }}
+                                                            {% endif %}
+                                                        {% else %}
+                                                            <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="score-summary">
+                                        <strong>Wynik framu:</strong>
+                                        <span class="badge bg-info">{{ frame.calculatePlayerScore(player) }}</span>
+
+                                        {% if frame.isPlayerStrike(player) %}
+                                            <span class="badge bg-success ms-2">STRIKE!</span>
+                                        {% elseif frame.isPlayerSpare(player) %}
+                                            <span class="badge bg-warning">SPARE</span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if roll1 and roll1.notes %}
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fa fa-comment"></i> {{ roll1.notes }}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+
+                            {% if frame.teamBPlayers|length > 0 %}
+                                <div class="alert alert-primary">
+                                    <strong>Statystyki Team B:</strong><br>
+                                    Strike'i: {{ frame.getTeamBStrikes() }}<br>
+                                    Spare'y: {{ frame.getTeamBSpares() }}<br>
+                                    Kompletny: {{ frame.isTeamBComplete() ? 'Tak' : 'Nie' }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="{{ ea_url().setAction('enterScores').setController('App\\Controller\\Admin\\FrameCrudController').setEntityId(frame.id) }}" class="btn btn-primary">
+                            <i class="fa fa-edit"></i> Edytuj wyniki
+                        </a>
+                        <a href="{{ ea_url().setAction('index').setController('App\\Controller\\Admin\\FrameCrudController') }}" class="btn btn-secondary">
+                            Powrót do listy
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .player-scores {
+            background-color: #f8f9fa;
+        }
+
+        .bowling-display {
+            display: flex;
+            justify-content: center;
+        }
+
+        .roll-box {
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .roll-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-bottom: 0.25rem;
+        }
+
+        .roll-value {
+            font-size: 2rem;
+            font-weight: bold;
+            padding: 1rem;
+            border: 2px solid #dee2e6;
+            border-radius: 0.5rem;
+            background-color: white;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .roll-value.strike {
+            background-color: #d4edda;
+            border-color: #28a745;
+        }
+
+        .roll-value.spare {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .strike-symbol {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .spare-symbol {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        .miss-symbol {
+            color: #6c757d;
+        }
+
+        .score-summary {
+            padding: 0.75rem;
+            background-color: #e9ecef;
+            border-radius: 0.25rem;
+            margin-top: 1rem;
+        }
+    </style>
+{% endblock %}
