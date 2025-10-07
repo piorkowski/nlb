@@ -46,7 +46,9 @@
                                         <label class="form-label">Gracz A</label>
                                         <select name="individual[playerA]" class="form-select" required>
                                             <option value="">Wybierz gracza...</option>
-                                            {# Tu należy dodać listę graczy z bazy #}
+                                            {% for player in players %}
+                                                <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                 </div>
@@ -55,7 +57,9 @@
                                         <label class="form-label">Gracz B</label>
                                         <select name="individual[playerB]" class="form-select" required>
                                             <option value="">Wybierz gracza...</option>
-                                            {# Tu należy dodać listę graczy z bazy #}
+                                            {% for player in players %}
+                                                <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                 </div>
@@ -86,46 +90,106 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <h6>Zawodnicy drużyny A</h6>
+                                    {% if game.teamA %}
+                                        {% set teamAPlayers = game.teamA.members %}
+                                    {% endif %}
+
                                     <div class="mb-3">
                                         <label class="form-label">Zawodnik 1</label>
                                         <select name="team[teamA][player1]" class="form-select" required>
                                             <option value="">Wybierz gracza...</option>
-                                            {# Lista graczy z drużyny A #}
+                                            {% if teamAPlayers is defined %}
+                                                {% for player in teamAPlayers %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% else %}
+                                                {% for player in players %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% endif %}
                                         </select>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Zawodnik 2</label>
                                         <select name="team[teamA][player2]" class="form-select" required>
                                             <option value="">Wybierz gracza...</option>
+                                            {% if teamAPlayers is defined %}
+                                                {% for player in teamAPlayers %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% else %}
+                                                {% for player in players %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% endif %}
                                         </select>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Zawodnik 3</label>
                                         <select name="team[teamA][player3]" class="form-select" required>
                                             <option value="">Wybierz gracza...</option>
+                                            {% if teamAPlayers is defined %}
+                                                {% for player in teamAPlayers %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% else %}
+                                                {% for player in players %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% endif %}
                                         </select>
                                     </div>
                                 </div>
 
                                 <div class="col-md-6">
                                     <h6>Zawodnicy drużyny B</h6>
+                                    {% if game.teamB %}
+                                        {% set teamBPlayers = game.teamB.members %}
+                                    {% endif %}
+
                                     <div class="mb-3">
                                         <label class="form-label">Zawodnik 1</label>
                                         <select name="team[teamB][player1]" class="form-select" required>
                                             <option value="">Wybierz gracza...</option>
-                                            {# Lista graczy z drużyny B #}
+                                            {% if teamBPlayers is defined %}
+                                                {% for player in teamBPlayers %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% else %}
+                                                {% for player in players %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% endif %}
                                         </select>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Zawodnik 2</label>
                                         <select name="team[teamB][player2]" class="form-select" required>
                                             <option value="">Wybierz gracza...</option>
+                                            {% if teamBPlayers is defined %}
+                                                {% for player in teamBPlayers %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% else %}
+                                                {% for player in players %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% endif %}
                                         </select>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Zawodnik 3</label>
                                         <select name="team[teamB][player3]" class="form-select" required>
                                             <option value="">Wybierz gracza...</option>
+                                            {% if teamBPlayers is defined %}
+                                                {% for player in teamBPlayers %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% else %}
+                                                {% for player in players %}
+                                                    <option value="{{ player.id }}">{{ player.fullName }}</option>
+                                                {% endfor %}
+                                            {% endif %}
                                         </select>
                                     </div>
                                 </div>

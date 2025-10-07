@@ -4,7 +4,9 @@ namespace App\Controller\Admin;
 
 use App\Entity\Game;
 use App\Entity\GameStatus;
+use App\Entity\User;
 use App\Service\GameGeneratorService;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
@@ -22,7 +24,8 @@ use Symfony\Component\HttpFoundation\Response;
 class GameCrudController extends AbstractCrudController
 {
     public function __construct(
-        private GameGeneratorService $gameGenerator
+        private GameGeneratorService $gameGenerator,
+        private EntityManagerInterface $em
     ) {}
 
     public static function getEntityFqcn(): string
@@ -109,14 +112,16 @@ class GameCrudController extends AbstractCrudController
             yield IntegerField::new('framesCount', 'Liczba framów')
                 ->formatValue(fn ($value, Game $game) => $game->getFrames()->count());
 
-            yield TextField::new('teamAScore', 'Wynik Team A')
+            yield TextField::new('teamAScoreDisplay', 'Wynik Team A')
+                ->setVirtual(true)
                 ->formatValue(fn ($value, Game $game) =>
-                $game->isTeamGame() ? $game->getTeamAScore() : 'N/A'
+                $game->isTeamGame() ? (string)$game->getTeamAScore() : 'N/A'
                 );
 
-            yield TextField::new('teamBScore', 'Wynik Team B')
+            yield TextField::new('teamBScoreDisplay', 'Wynik Team B')
+                ->setVirtual(true)
                 ->formatValue(fn ($value, Game $game) =>
-                $game->isTeamGame() ? $game->getTeamBScore() : 'N/A'
+                $game->isTeamGame() ? (string)$game->getTeamBScore() : 'N/A'
                 );
 
             yield TextField::new('winner', 'Zwycięzca')
@@ -129,8 +134,19 @@ class GameCrudController extends AbstractCrudController
      */
     public function viewFrames(AdminContext $context): Response
     {
-        /** @var Game $game */
-        $game = $context->getEntity()->getInstance();
+        // Pobierz ID z requesta
+        $entityId = $context->getRequest()->query->get('entityId');
+
+        if (!$entityId) {
+            throw $this->createNotFoundException('Entity ID not provided');
+        }
+
+        // Pobierz encję bezpośrednio z EntityManager
+        $game = $this->em->getRepository(Game::class)->find($entityId);
+
+        if (!$game) {
+            throw $this->createNotFoundException('Game not found');
+        }
 
         // Pobierz informacje o strukturze z serwisu
         $structureInfo = $this->gameGenerator->getGameStructureInfo($game);
@@ -147,15 +163,29 @@ class GameCrudController extends AbstractCrudController
      */
     public function generateGame(AdminContext $context): Response
     {
-        /** @var Game $game */
-        $game = $context->getEntity()->getInstance();
+        // Pobierz ID z requesta
+        $entityId = $context->getRequest()->query->get('entityId');
+
+        if (!$entityId) {
+            throw $this->createNotFoundException('Entity ID not provided');
+        }
+
+        $game = $this->em->getRepository(Game::class)->find($entityId);
+
+        if (!$game) {
+            throw $this->createNotFoundException('Game not found');
+        }
 
         // Sprawdź czy mecz jest gotowy do generowania
         $isReady = $this->gameGenerator->isGameReady($game);
 
+        // Pobierz wszystkich graczy z bazy
+        $players = $this->em->getRepository(User::class)->findAll();
+
         return $this->render('admin/game/generate.html.twig', [
             'game' => $game,
             'isReady' => $isReady,
+            'players' => $players,
         ]);
     }
 }

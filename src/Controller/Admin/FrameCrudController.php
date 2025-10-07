@@ -3,7 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Frame;
-use App\Entity\Roll;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
@@ -20,6 +20,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class FrameCrudController extends AbstractCrudController
 {
+    public function __construct(
+        private EntityManagerInterface $em
+    ) {}
+
     public static function getEntityFqcn(): string
     {
         return Frame::class;
@@ -109,7 +113,19 @@ class FrameCrudController extends AbstractCrudController
      */
     public function enterScores(AdminContext $context): Response
     {
-        $frame = $context->getEntity()->getInstance();
+        // Pobierz ID z requesta
+        $entityId = $context->getRequest()->query->get('entityId');
+
+        if (!$entityId) {
+            throw $this->createNotFoundException('Entity ID not provided');
+        }
+
+        // Pobierz encję bezpośrednio z EntityManager
+        $frame = $this->em->getRepository(Frame::class)->find($entityId);
+
+        if (!$frame) {
+            throw $this->createNotFoundException('Frame not found');
+        }
 
         return $this->render('admin/frame/enter_scores.html.twig', [
             'frame' => $frame,
@@ -121,7 +137,18 @@ class FrameCrudController extends AbstractCrudController
      */
     public function viewScores(AdminContext $context): Response
     {
-        $frame = $context->getEntity()->getInstance();
+        // Pobierz ID z requesta
+        $entityId = $context->getRequest()->query->get('entityId');
+
+        if (!$entityId) {
+            throw $this->createNotFoundException('Entity ID not provided');
+        }
+
+        $frame = $this->em->getRepository(Frame::class)->find($entityId);
+
+        if (!$frame) {
+            throw $this->createNotFoundException('Frame not found');
+        }
 
         return $this->render('admin/frame/view_scores.html.twig', [
             'frame' => $frame,

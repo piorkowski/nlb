@@ -1,6 +1,444 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
 {% block content_title %}
+    Wprowadź wyniki - Tor {{ frame.laneNumber }}
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fa fa-bowling-ball"></i>
+                        Mecz: {{ frame.game }}
+                    </h3>
+                    <p class="mb-0 mt-2">
+                        <strong>Tor {{ frame.laneNumber }}</strong> |
+                        Gra {{ frame.gameNumber }} |
+                        {{ frame.game.gameDate|date('d.m.Y H:i') }}
+                    </p>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ path('admin_frame_save_scores', {frameId: frame.id}) }}" id="scoreForm">
+
+                        {# Tabela wyników w stylu bowling scorecard #}
+                        <div class="bowling-input-table">
+                            <table class="table table-bordered">
+                                <thead class="table-dark">
+                                <tr>
+                                    <th width="180">Gracz</th>
+                                    {% for i in 1..10 %}
+                                        <th class="text-center frame-header">
+                                            <div class="frame-number">{{ i }}</div>
+                                        </th>
+                                    {% endfor %}
+                                    <th class="text-center bg-warning">TOTAL</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {# Team A Players #}
+                                {% for player in frame.teamAPlayers %}
+                                    <tr class="player-row">
+                                        <td class="player-name-cell">
+                                            <div class="player-info">
+                                                <strong>{{ player.fullName }}</strong>
+                                                {% if frame.teamA %}
+                                                    <br><small class="text-muted">{{ frame.teamA.name }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+
+                                        {% for frameNum in 1..10 %}
+                                            {% set currentFrame = null %}
+                                            {% for f in frame.game.frames %}
+                                                {% if f.laneNumber == frame.laneNumber
+                                                    and f.gameNumber == frame.gameNumber
+                                                    and f.frameNumber == frameNum %}
+                                                    {% set currentFrame = f %}
+                                                {% endif %}
+                                            {% endfor %}
+
+                                            <td class="frame-input-cell" data-frame="{{ frameNum }}">
+                                                {% if currentFrame %}
+                                                    {% set roll1 = currentFrame.getPlayerRoll(player, 1) %}
+                                                    {% set roll2 = currentFrame.getPlayerRoll(player, 2) %}
+                                                    {% set roll3 = currentFrame.getPlayerRoll(player, 3) %}
+
+                                                    <div class="frame-inputs">
+                                                        {# Rzut 1 #}
+                                                        <input
+                                                            type="number"
+                                                            name="frames[{{ currentFrame.id }}][{{ player.id }}][roll1]"
+                                                            class="form-control form-control-sm roll-input"
+                                                            min="0"
+                                                            max="10"
+                                                            value="{{ roll1 ? roll1.pinsKnocked : '' }}"
+                                                            placeholder="-"
+                                                            data-frame-id="{{ currentFrame.id }}"
+                                                            data-player-id="{{ player.id }}"
+                                                            data-roll="1"
+                                                        >
+
+                                                        {# Rzut 2 #}
+                                                        <input
+                                                            type="number"
+                                                            name="frames[{{ currentFrame.id }}][{{ player.id }}][roll2]"
+                                                            class="form-control form-control-sm roll-input"
+                                                            min="0"
+                                                            max="10"
+                                                            value="{{ roll2 ? roll2.pinsKnocked : '' }}"
+                                                            placeholder="-"
+                                                            data-frame-id="{{ currentFrame.id }}"
+                                                            data-player-id="{{ player.id }}"
+                                                            data-roll="2"
+                                                        >
+
+                                                        {# Rzut 3 (tylko dla framu 10) #}
+                                                        {% if frameNum == 10 %}
+                                                            <input
+                                                                type="number"
+                                                                name="frames[{{ currentFrame.id }}][{{ player.id }}][roll3]"
+                                                                class="form-control form-control-sm roll-input"
+                                                                min="0"
+                                                                max="10"
+                                                                value="{{ roll3 ? roll3.pinsKnocked : '' }}"
+                                                                placeholder="-"
+                                                                data-frame-id="{{ currentFrame.id }}"
+                                                                data-player-id="{{ player.id }}"
+                                                                data-roll="3"
+                                                            >
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="frame-score-display">
+                                                        <small class="text-muted">
+                                                            Score: <strong>{{ currentFrame.calculatePlayerScore(player) }}</strong>
+                                                        </small>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+
+                                        <td class="text-center total-score-cell">
+                                            <h4 class="mb-0" id="total-{{ player.id }}">
+                                                {{ frame.game.getPlayerTotalScore(player) }}
+                                            </h4>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+
+                                {# Team B Players #}
+                                {% for player in frame.teamBPlayers %}
+                                    <tr class="player-row">
+                                        <td class="player-name-cell">
+                                            <div class="player-info">
+                                                <strong>{{ player.fullName }}</strong>
+                                                {% if frame.teamB %}
+                                                    <br><small class="text-muted">{{ frame.teamB.name }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+
+                                        {% for frameNum in 1..10 %}
+                                            {% set currentFrame = null %}
+                                            {% for f in frame.game.frames %}
+                                                {% if f.laneNumber == frame.laneNumber
+                                                    and f.gameNumber == frame.gameNumber
+                                                    and f.frameNumber == frameNum %}
+                                                    {% set currentFrame = f %}
+                                                {% endif %}
+                                            {% endfor %}
+
+                                            <td class="frame-input-cell" data-frame="{{ frameNum }}">
+                                                {% if currentFrame %}
+                                                    {% set roll1 = currentFrame.getPlayerRoll(player, 1) %}
+                                                    {% set roll2 = currentFrame.getPlayerRoll(player, 2) %}
+                                                    {% set roll3 = currentFrame.getPlayerRoll(player, 3) %}
+
+                                                    <div class="frame-inputs">
+                                                        <input
+                                                            type="number"
+                                                            name="frames[{{ currentFrame.id }}][{{ player.id }}][roll1]"
+                                                            class="form-control form-control-sm roll-input"
+                                                            min="0"
+                                                            max="10"
+                                                            value="{{ roll1 ? roll1.pinsKnocked : '' }}"
+                                                            placeholder="-"
+                                                            data-frame-id="{{ currentFrame.id }}"
+                                                            data-player-id="{{ player.id }}"
+                                                            data-roll="1"
+                                                        >
+
+                                                        <input
+                                                            type="number"
+                                                            name="frames[{{ currentFrame.id }}][{{ player.id }}][roll2]"
+                                                            class="form-control form-control-sm roll-input"
+                                                            min="0"
+                                                            max="10"
+                                                            value="{{ roll2 ? roll2.pinsKnocked : '' }}"
+                                                            placeholder="-"
+                                                            data-frame-id="{{ currentFrame.id }}"
+                                                            data-player-id="{{ player.id }}"
+                                                            data-roll="2"
+                                                        >
+
+                                                        {% if frameNum == 10 %}
+                                                            <input
+                                                                type="number"
+                                                                name="frames[{{ currentFrame.id }}][{{ player.id }}][roll3]"
+                                                                class="form-control form-control-sm roll-input"
+                                                                min="0"
+                                                                max="10"
+                                                                value="{{ roll3 ? roll3.pinsKnocked : '' }}"
+                                                                placeholder="-"
+                                                                data-frame-id="{{ currentFrame.id }}"
+                                                                data-player-id="{{ player.id }}"
+                                                                data-roll="3"
+                                                            >
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="frame-score-display">
+                                                        <small class="text-muted">
+                                                            Score: <strong>{{ currentFrame.calculatePlayerScore(player) }}</strong>
+                                                        </small>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+
+                                        <td class="text-center total-score-cell">
+                                            <h4 class="mb-0" id="total-{{ player.id }}">
+                                                {{ frame.game.getPlayerTotalScore(player) }}
+                                            </h4>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <input type="hidden" name="_token" value="{{ csrf_token('frame_scores_' ~ frame.id) }}">
+
+                        <div class="form-actions mt-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fa fa-save"></i> Zapisz wszystkie wyniki
+                                </button>
+                                <button type="button" class="btn btn-warning btn-lg ms-2" onclick="clearAll()">
+                                    <i class="fa fa-eraser"></i> Wyczyść
+                                </button>
+                            </div>
+                            <a href="{{ ea_url().setAction('viewFrames').setController('App\\Controller\\Admin\\GameCrudController').setEntityId(frame.game.id) }}" class="btn btn-secondary">
+                                <i class="fa fa-arrow-left"></i> Powrót do meczu
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {# Legenda #}
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6><i class="fa fa-info-circle"></i> Instrukcje:</h6>
+                    <ul class="mb-0">
+                        <li>Wpisz liczbę zbitych kręgli dla każdego rzutu (0-10)</li>
+                        <li>System automatycznie obliczy wyniki z bonusami za strike i spare</li>
+                        <li>Strike (X) = 10 kręgli w pierwszym rzucie</li>
+                        <li>Spare (/) = 10 kręgli w sumie po dwóch rzutach</li>
+                        <li>W 10 framie możesz wykonać 3 rzuty jeśli zrobisz strike lub spare</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .bowling-input-table {
+            overflow-x: auto;
+        }
+
+        .bowling-input-table table {
+            min-width: 1200px;
+            font-size: 0.9rem;
+        }
+
+        .frame-header {
+            background-color: #343a40;
+            color: white;
+            font-weight: bold;
+            padding: 0.5rem;
+        }
+
+        .frame-number {
+            font-size: 1.1rem;
+        }
+
+        .player-name-cell {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+
+        .player-info {
+            padding: 0.5rem;
+        }
+
+        .frame-input-cell {
+            padding: 0.5rem !important;
+            vertical-align: top;
+            background-color: #fff;
+        }
+
+        .frame-inputs {
+            display: flex;
+            gap: 2px;
+            justify-content: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .roll-input {
+            width: 35px;
+            height: 35px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1rem;
+            padding: 0;
+            border: 2px solid #dee2e6;
+        }
+
+        .roll-input:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+
+        .roll-input[value=""]:not(:focus) {
+            background-color: #fff3cd;
+        }
+
+        .frame-score-display {
+            text-align: center;
+            font-size: 0.75rem;
+        }
+
+        .total-score-cell {
+            background-color: #ffc107;
+            vertical-align: middle;
+            font-weight: bold;
+        }
+
+        .player-row:nth-child(odd) .frame-input-cell {
+            background-color: #f8f9fa;
+        }
+
+        .player-row:hover {
+            background-color: #e9ecef;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .roll-input {
+                width: 30px;
+                height: 30px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const rollInputs = document.querySelectorAll('.roll-input');
+
+            rollInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    validateRoll(this);
+                });
+
+                // Enter key moves to next input
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const nextInput = getNextInput(this);
+                        if (nextInput) {
+                            nextInput.focus();
+                            nextInput.select();
+                        }
+                    }
+                });
+            });
+
+            function validateRoll(input) {
+                const frameId = input.dataset.frameId;
+                const playerId = input.dataset.playerId;
+                const rollNum = parseInt(input.dataset.roll);
+                const value = parseInt(input.value) || 0;
+
+                // Walidacja zakresu
+                if (value < 0 || value > 10) {
+                    input.value = '';
+                    return;
+                }
+
+                // Znajdź inne rzuty tego gracza w tym framie
+                const roll1Input = document.querySelector(`input[data-frame-id="${frameId}"][data-player-id="${playerId}"][data-roll="1"]`);
+                const roll2Input = document.querySelector(`input[data-frame-id="${frameId}"][data-player-id="${playerId}"][data-roll="2"]`);
+
+                if (rollNum === 1 && value === 10) {
+                    // Strike - wyłącz/wyczyść rzut 2 (chyba że to fram 10)
+                    const frameNum = parseInt(input.closest('.frame-input-cell').dataset.frame);
+                    if (frameNum !== 10 && roll2Input) {
+                        roll2Input.value = '';
+                        roll2Input.disabled = true;
+                        roll2Input.style.backgroundColor = '#e9ecef';
+                    }
+                } else if (roll1Input && roll2Input && rollNum === 1) {
+                    // Włącz rzut 2
+                    roll2Input.disabled = false;
+                    roll2Input.style.backgroundColor = '';
+                }
+
+                // Sprawdź sumę rzutów 1 i 2
+                if (rollNum === 2 && roll1Input) {
+                    const roll1Value = parseInt(roll1Input.value) || 0;
+                    const frameNum = parseInt(input.closest('.frame-input-cell').dataset.frame);
+
+                    if (frameNum !== 10 && roll1Value + value > 10) {
+                        alert(`Suma rzutów nie może przekroczyć 10! (${roll1Value} + ${value} = ${roll1Value + value})`);
+                        input.value = '';
+                        return;
+                    }
+                }
+
+                // Podświetl wypełnione pola
+                if (value > 0) {
+                    input.style.backgroundColor = value === 10 ? '#d4edda' : '#ffffff';
+                    input.style.borderColor = value === 10 ? '#28a745' : '#dee2e6';
+                }
+            }
+
+            function getNextInput(currentInput) {
+                const allInputs = Array.from(document.querySelectorAll('.roll-input:not([disabled])'));
+                const currentIndex = allInputs.indexOf(currentInput);
+                return allInputs[currentIndex + 1];
+            }
+        });
+
+        function clearAll() {
+            if (confirm('Czy na pewno chcesz wyczyścić wszystkie wprowadzone wyniki?')) {
+                document.querySelectorAll('.roll-input').forEach(input => {
+                    input.value = '';
+                    input.disabled = false;
+                    input.style.backgroundColor = '';
+                    input.style.borderColor = '';
+                });
+            }
+        }
+    </script>
+{% endblock %}
+
+
+{% block content_title %}
     Wprowadź wyniki - Fram {{ frame.frameNumber }} (Gra {{ frame.gameNumber }}, Tor {{ frame.laneNumber }})
 {% endblock %}
 

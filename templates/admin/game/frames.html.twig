@@ -13,7 +13,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <p><strong>Data:</strong> {{ game.gameDate|date('d.m.Y H:i') }}</p>
                             <p><strong>Liga:</strong> {{ game.league.name }}</p>
                             <p><strong>Status:</strong>
@@ -22,7 +22,7 @@
                             </span>
                             </p>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             {% if game.isTeamGame %}
                                 <p><strong>Typ:</strong> Gra drużynowa</p>
                                 <p><strong>{{ game.teamA.name }}:</strong> {{ game.getTeamAScore() }}</p>
@@ -41,21 +41,6 @@
                                 {% endif %}
                             {% endif %}
                         </div>
-                        <div class="col-md-4">
-                            {% if structureInfo.hasFrames %}
-                                <div class="alert alert-info mb-0">
-                                    <h6 class="mb-2"><i class="fa fa-info-circle"></i> Struktura meczu</h6>
-                                    <p class="mb-1"><strong>Framów:</strong> {{ structureInfo.framesCount }}</p>
-                                    <p class="mb-1"><strong>Gier:</strong> {{ structureInfo.gamesCount }}</p>
-                                    <p class="mb-1"><strong>Torów:</strong> {{ structureInfo.lanesCount }} ({{ structureInfo.lanes|join(', ') }})</p>
-                                    <p class="mb-0"><strong>Graczy:</strong> {{ structureInfo.playersCount }}</p>
-                                </div>
-                            {% else %}
-                                <div class="alert alert-warning mb-0">
-                                    <i class="fa fa-exclamation-triangle"></i> Brak wygenerowanej struktury
-                                </div>
-                            {% endif %}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -71,12 +56,14 @@
             {% else %}
                 {# Grupuj framy po grach (gameNumber) #}
                 {% set framesByGame = {} %}
+                {% set framesByGame = {} %}
                 {% for frame in frames %}
                     {% set gameKey = frame.gameNumber %}
                     {% if framesByGame[gameKey] is not defined %}
-                        {% set framesByGame = framesByGame|merge({(gameKey): []}) %}
+                        {% set framesByGame = framesByGame|merge({(gameKey): [frame]}) %}
+                    {% else %}
+                        {% set framesByGame = framesByGame|merge({(gameKey): framesByGame[gameKey]|merge([frame])}) %}
                     {% endif %}
-                    {% set framesByGame = framesByGame|merge({(gameKey): framesByGame[gameKey]|merge([frame])}) %}
                 {% endfor %}
 
                 {% for gameNumber, gameFrames in framesByGame %}
@@ -90,9 +77,10 @@
                             {% for frame in gameFrames %}
                                 {% set laneKey = frame.laneNumber %}
                                 {% if framesByLane[laneKey] is not defined %}
-                                    {% set framesByLane = framesByLane|merge({(laneKey): []}) %}
+                                    {% set framesByLane = framesByLane|merge({(laneKey): [frame]}) %}
+                                {% else %}
+                                    {% set framesByLane = framesByLane|merge({(laneKey): framesByLane[laneKey]|merge([frame])}) %}
                                 {% endif %}
-                                {% set framesByLane = framesByLane|merge({(laneKey): framesByLane[laneKey]|merge([frame])}) %}
                             {% endfor %}
 
                             {% for laneNumber, laneFrames in framesByLane %}

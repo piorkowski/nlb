@@ -1,9 +1,7 @@
 <?php
-declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Controller\Admin;
 
-use App\Controller\Admin\FrameCrudController;
 use App\Entity\Frame;
 use App\Entity\User;
 use App\Service\RollService;
@@ -42,28 +40,25 @@ class FrameScoresController extends AbstractController
         }
 
         try {
-            // Pobierz dane z formularza
-            $teamAData = $request->request->all('teamA');
-            $teamBData = $request->request->all('teamB');
+            // Nowa struktura: frames[frameId][playerId][roll1/roll2/roll3]
+            $framesData = $request->request->all('frames');
 
-            // Zapisz rzuty Team A
-            foreach ($teamAData as $playerId => $rolls) {
-                $player = $this->em->getRepository(User::class)->find($playerId);
-                if (!$player) {
+            foreach ($framesData as $currentFrameId => $playersData) {
+                $currentFrame = $this->em->getRepository(Frame::class)->find($currentFrameId);
+
+                if (!$currentFrame) {
                     continue;
                 }
 
-                $this->savePlayerRolls($frame, $player, $rolls);
-            }
+                foreach ($playersData as $playerId => $rolls) {
+                    $player = $this->em->getRepository(User::class)->find($playerId);
 
-            // Zapisz rzuty Team B
-            foreach ($teamBData as $playerId => $rolls) {
-                $player = $this->em->getRepository(User::class)->find($playerId);
-                if (!$player) {
-                    continue;
+                    if (!$player) {
+                        continue;
+                    }
+
+                    $this->savePlayerRolls($currentFrame, $player, $rolls);
                 }
-
-                $this->savePlayerRolls($frame, $player, $rolls);
             }
 
             $this->em->flush();
@@ -105,8 +100,9 @@ class FrameScoresController extends AbstractController
             } catch (\Exception $e) {
                 // Loguj błąd ale kontynuuj
                 $this->addFlash('warning', sprintf(
-                    'Błąd dla gracza %s, rzut %d: %s',
+                    'Błąd dla gracza %s, fram %d, rzut %d: %s',
                     $player->getFullName(),
+                    $frame->getFrameNumber(),
                     $rollNum,
                     $e->getMessage()
                 ));
