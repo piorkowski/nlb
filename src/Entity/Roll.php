@@ -19,7 +19,7 @@ class Roll
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'playerARolls')]
+    #[ORM\ManyToOne(inversedBy: 'rolls')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Frame $frame = null;
 
@@ -105,8 +105,12 @@ class Roll
         return $this->isSpare;
     }
 
+    /**
+     * Automatyczna aktualizacja flag strike/spare
+     */
     private function updateFlags(): void
     {
+        // Strike - 10 kręgli w pierwszym rzucie
         if ($this->rollNumber === 1 && $this->pinsKnocked === 10) {
             $this->isStrike = true;
             $this->isSpare = false;
@@ -115,8 +119,9 @@ class Roll
 
         $this->isStrike = false;
 
+        // Spare - 10 kręgli w sumie po dwóch rzutach
         if ($this->rollNumber === 2 && $this->frame) {
-            $previousRoll = $this->frame->getPlayerARoll(1) ?? $this->frame->getPlayerBRoll(1);
+            $previousRoll = $this->frame->getPlayerRoll($this->player, 1);
             if ($previousRoll && ($previousRoll->getPinsKnocked() + $this->pinsKnocked) === 10) {
                 $this->isSpare = true;
                 return;
@@ -126,18 +131,32 @@ class Roll
         $this->isSpare = false;
     }
 
-    public function __toString(): string
+    /**
+     * Zwraca reprezentację tekstową rzutu (X, /, -, lub liczba)
+     */
+    public function getDisplay(): string
     {
-        $result = (string)$this->pinsKnocked;
-
         if ($this->isStrike) {
-            $result = 'X';
-        } elseif ($this->isSpare) {
-            $result = '/';
-        } elseif ($this->pinsKnocked === 0) {
-            $result = '-';
+            return 'X';
         }
 
-        return sprintf('Roll #%d: %s', $this->rollNumber, $result);
+        if ($this->isSpare) {
+            return '/';
+        }
+
+        if ($this->pinsKnocked === 0) {
+            return '-';
+        }
+
+        return (string) $this->pinsKnocked;
+    }
+
+    public function __toString(): string
+    {
+        return sprintf('Roll #%d: %s (%d pins)',
+            $this->rollNumber,
+            $this->getDisplay(),
+            $this->pinsKnocked
+        );
     }
 }
