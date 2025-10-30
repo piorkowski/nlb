@@ -40,14 +40,21 @@ class Team
     /**
      * @var Collection<int, Game>
      */
-    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'team1')]
-    private Collection $games;
+    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'teamA')]
+    private Collection $gamesAsTeamA;
+
+    /**
+     * @var Collection<int, Game>
+     */
+    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'teamB')]
+    private Collection $gamesAsTeamB;
 
     public function __construct()
     {
         $this->players = new ArrayCollection();
         $this->leagues = new ArrayCollection();
-        $this->games = new ArrayCollection();
+        $this->gamesAsTeamA = new ArrayCollection();
+        $this->gamesAsTeamB = new ArrayCollection();
     }
 
     public function __toString(): string
@@ -141,6 +148,22 @@ class Team
     public function getGames(): Collection
     {
         return $this->games;
+    }
+
+    /**
+     * @return Collection<int, Game>
+     */
+    public function getGamesAsTeamA(): Collection
+    {
+        return $this->gamesAsTeamA;
+    }
+
+    /**
+     * @return Collection<int, Game>
+     */
+    public function getGamesAsTeamB(): Collection
+    {
+        return $this->gamesAsTeamB;
     }
 
     public function addGame(Game $game): static

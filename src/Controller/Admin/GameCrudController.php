@@ -40,14 +40,19 @@ class GameCrudController extends AbstractCrudController
             ->setEntityLabelInPlural('Mecze')
             ->setSearchFields(['id', 'notes', 'teamA.name', 'teamB.name'])
             ->setDefaultSort(['gameDate' => 'DESC'])
-            ->setPaginatorPageSize(20);
+            ->setPaginatorPageSize(20)
+            ->setPageTitle('index', 'Zarządzanie meczami')
+            ->setPageTitle('new', 'Dodaj nowy mecz')
+            ->setPageTitle('edit', 'Edytuj mecz')
+            ->setPageTitle('detail', 'Szczegóły meczu');
     }
 
     public function configureActions(Actions $actions): Actions
     {
-        $viewFrames = Action::new('viewFrames', 'Framy', 'fa fa-list')
-            ->linkToCrudAction('viewFrames')
-            ->setCssClass('btn btn-info');
+        $enterScores = Action::new('enterScores', 'Wpisz wyniki', 'fa fa-edit')
+            ->linkToRoute('admin_game_scores_edit', fn (Game $game) => ['id' => $game->getId()])
+            ->displayIf(fn (Game $game) => !$game->getFrames()->isEmpty())
+            ->setCssClass('btn btn-warning');
 
         $generateGame = Action::new('generateGame', 'Generuj mecz', 'fa fa-magic')
             ->linkToCrudAction('generateGame')
@@ -55,26 +60,31 @@ class GameCrudController extends AbstractCrudController
             ->setCssClass('btn btn-success');
 
         return $actions
-            ->add(Crud::PAGE_INDEX, $viewFrames)
-            ->add(Crud::PAGE_DETAIL, $viewFrames)
-            ->add(Crud::PAGE_EDIT, $generateGame)
+            ->add(Crud::PAGE_INDEX, $enterScores)
+            ->add(Crud::PAGE_DETAIL, $enterScores)
+            ->add(Crud::PAGE_DETAIL, $generateGame)
             ->add(Crud::PAGE_INDEX, Action::DETAIL);
     }
 
     public function configureFields(string $pageName): iterable
     {
-        yield IdField::new('id')
+        yield IdField::new('id', 'ID')
             ->hideOnForm();
 
         yield DateTimeField::new('gameDate', 'Data meczu')
+            ->setColumns(6)
             ->setFormat('dd.MM.yyyy HH:mm')
-            ->setRequired(true);
+            ->setRequired(true)
+            ->setHelp('Kiedy odbędzie się mecz');
 
         yield AssociationField::new('league', 'Liga')
+            ->setColumns(6)
             ->setRequired(true)
-            ->autocomplete();
+            ->autocomplete()
+            ->setHelp('W jakiej lidze rozgrywany jest mecz');
 
         yield ChoiceField::new('status', 'Status')
+            ->setColumns(12)
             ->setChoices([
                 'Szkic' => GameStatus::DRAFT,
                 'Planowany' => GameStatus::PLANNED,
@@ -85,24 +95,27 @@ class GameCrudController extends AbstractCrudController
             ->renderExpanded()
             ->renderAsBadges([
                 GameStatus::DRAFT->value => 'secondary',
-                GameStatus::PLANNED->value => 'secondary',
+                GameStatus::PLANNED->value => 'info',
                 GameStatus::IN_PROGRESS->value => 'primary',
                 GameStatus::FINISHED->value => 'success',
                 GameStatus::CANCELLED->value => 'danger',
             ]);
 
         yield AssociationField::new('teamA', 'Drużyna A')
+            ->setColumns(6)
             ->autocomplete()
             ->setHelp('Zostaw puste dla gry indywidualnej');
 
         yield AssociationField::new('teamB', 'Drużyna B')
+            ->setColumns(6)
             ->autocomplete()
             ->setHelp('Zostaw puste dla gry indywidualnej');
 
         yield TextareaField::new('notes', 'Notatki')
-            ->hideOnIndex();
+            ->setColumns(12)
+            ->hideOnIndex()
+            ->setHelp('Dodatkowe informacje o meczu');
 
-        // Tylko na stronie szczegółów
         if ($pageName === Crud::PAGE_DETAIL) {
             yield TextField::new('gameType', 'Typ gry')
                 ->formatValue(function ($value, Game $game) {
@@ -126,6 +139,12 @@ class GameCrudController extends AbstractCrudController
 
             yield TextField::new('winner', 'Zwycięzca')
                 ->formatValue(fn ($value, Game $game) => $game->getWinner() ?? 'Nierozstrzygnięte');
+
+            yield DateTimeField::new('createdAt', 'Data utworzenia')
+                ->setFormat('dd.MM.yyyy HH:mm');
+            
+            yield DateTimeField::new('updatedAt', 'Ostatnia aktualizacja')
+                ->setFormat('dd.MM.yyyy HH:mm');
         }
     }
 

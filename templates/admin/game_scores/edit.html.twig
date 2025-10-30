@@ -1,0 +1,109 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Wpisywanie wyników: {{ game }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4">Wpisywanie wyników: {{ game }}</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="{{ path('admin_game_scores_save', {id: game.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('game_scores_' ~ game.id) }}">
+
+                {% for gameNumber, frames in gamesByNumber %}
+                    <h4 class="mt-4">Mecz {{ gameNumber }}</h4>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Zawodnik</th>
+                                    {% for frameNumber in 1..10 %}
+                                        <th class="text-center">{{ frameNumber }}</th>
+                                    {% endfor %}
+                                    <th>Suma</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for player in players %}
+                                    <tr>
+                                        <td>{{ player.fullName }}</td>
+                                        {% for frameNumber in 1..10 %}
+                                            {% set frame = frames[frameNumber] ?? null %}
+                                            <td class="text-center">
+                                                {% if frame %}
+                                                    {% set playerRolls = frame.getPlayerPins(player) %}
+                                                    {% set currentValue = '' %}
+                                                    {% if playerRolls|length > 0 %}
+                                                        {% if frameNumber == 10 %}
+                                                            {% set parts = [] %}
+                                                            {% for rollNum, pins in playerRolls %}
+                                                                {% if pins == 10 %}
+                                                                    {% set parts = parts|merge(['X']) %}
+                                                                {% elseif rollNum > 1 and (playerRolls[rollNum-1] ?? 0) + pins == 10 %}
+                                                                    {% set parts = parts|merge(['/']) %}
+                                                                {% else %}
+                                                                    {% set parts = parts|merge([pins == 0 ? '-' : pins]) %}
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                            {% set currentValue = parts|join(',') %}
+                                                        {% else %}
+                                                            {% if playerRolls[1] == 10 %}
+                                                                {% set currentValue = 'X' %}
+                                                            {% elseif playerRolls|length == 2 and (playerRolls[1] + playerRolls[2]) == 10 %}
+                                                                {% set currentValue = playerRolls[1] ~ '/' %}
+                                                            {% else %}
+                                                                {% set parts = [] %}
+                                                                {% for rollNum, pins in playerRolls %}
+                                                                    {% set parts = parts|merge([pins == 0 ? '-' : pins]) %}
+                                                                {% endfor %}
+                                                                {% set currentValue = parts|join(',') %}
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                    <input type="text" 
+                                                           name="scores[{{ frame.id }}][{{ player.id }}]" 
+                                                           value="{{ currentValue }}"
+                                                           class="form-control form-control-sm text-center" 
+                                                           placeholder="{% if frameNumber == 10 %}X,X,X{% else %}X lub 7/{% endif %}"
+                                                           style="max-width: 90px;">
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+                                        <td class="text-center font-weight-bold">
+                                            {{ game.getPlayerTotalScore(player) }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save"></i> Zapisz wyniki
+                    </button>
+                    <a href="{{ path('admin') }}" class="btn btn-secondary">
+                        Powrót do panelu
+                    </a>
+                </div>
+            </form>
+
+            <div class="alert alert-info mt-3">
+                <strong>Format wpisywania:</strong>
+                <ul class="mb-0">
+                    <li><code>X</code> - strike</li>
+                    <li><code>7/</code> - spare (pierwszy rzut 7, drugi dokańcza do 10)</li>
+                    <li><code>7,2</code> - dwa rzuty (7 i 2)</li>
+                    <li><code>-</code> lub <code>0</code> - pudło</li>
+                    <li><strong>Frame 10:</strong> <code>X,X,X</code> lub <code>7/,X</code> (może być 2-3 rzuty)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

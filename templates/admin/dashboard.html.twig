@@ -2,106 +2,207 @@
 
 {% block body_id 'dashboard' %}
 
-{#{% extends '@EasyAdmin/page/content.html.twig' %}#}
-
 {% block content_title %}
-    <i class="fa fa-bowling-ball"></i> Bowling Liga - Panel Administracyjny
+    <i class="fa fa-bowling-ball"></i>
+    {% if isAdmin %}
+        Panel Administracyjny
+    {% else %}
+        Witaj, {{ app.user.fullName }}!
+    {% endif %}
 {% endblock %}
 
 {% block main %}
+    {% if not isAdmin and playerInfo %}
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5><i class="fa fa-trophy"></i> Twoje ligi</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if playerInfo.leagues|length > 0 %}
+                            <ul class="list-group list-group-flush">
+                                {% for league in playerInfo.leagues %}
+                                    <li class="list-group-item">
+                                        <i class="fa fa-trophy text-warning"></i> {{ league.name }}
+                                        <small class="text-muted">({{ league.type.value }})</small>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">Nie jesteś zapisany do żadnej ligi</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5><i class="fa fa-users"></i> Twoje drużyny</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if playerInfo.teams|length > 0 %}
+                            <ul class="list-group list-group-flush">
+                                {% for team in playerInfo.teams %}
+                                    <li class="list-group-item">
+                                        <i class="fa fa-users text-info"></i> {{ team.name }}
+                                        <small class="text-muted">({{ team.players|length }} graczy)</small>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">Nie jesteś w żadnej drużynie</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
     <div class="row">
-        <div class="col-md-3">
-            <div class="card text-center mb-4">
-                <div class="card-body">
-                    <i class="fa fa-gamepad fa-3x text-primary mb-3"></i>
-                    <h5 class="card-title">Mecze</h5>
-                    <p class="card-text">Zarządzaj meczami i wprowadzaj wyniki</p>
-                    <a href="{{ ea_url().setController('App\\Controller\\Admin\\GameCrudController').setAction('index') }}" class="btn btn-primary">
-                        Przejdź
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-center mb-4">
-                <div class="card-body">
-                    <i class="fa fa-list fa-3x text-success mb-3"></i>
-                    <h5 class="card-title">Framy</h5>
-                    <p class="card-text">Przeglądaj i edytuj wyniki framów</p>
-                    <a href="{{ ea_url().setController('App\\Controller\\Admin\\FrameCrudController').setAction('index') }}" class="btn btn-success">
-                        Przejdź
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-center mb-4">
-                <div class="card-body">
-                    <i class="fa fa-trophy fa-3x text-warning mb-3"></i>
-                    <h5 class="card-title">Ligi</h5>
-                    <p class="card-text">Zarządzaj ligami i sezonami</p>
-                    <a href="{{ ea_url().setController('App\\Controller\\Admin\\LeagueCrudController').setAction('index') }}" class="btn btn-warning">
-                        Przejdź
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card text-center mb-4">
-                <div class="card-body">
-                    <i class="fa fa-users fa-3x text-info mb-3"></i>
-                    <h5 class="card-title">Drużyny</h5>
-                    <p class="card-text">Zarządzaj drużynami i zawodnikami</p>
-                    <a href="{{ ea_url().setController('App\\Controller\\Admin\\TeamCrudController').setAction('index') }}" class="btn btn-info">
-                        Przejdź
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-4">
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fa fa-clock"></i> Ostatnie mecze</h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted">Lista ostatnio zaktualizowanych meczów pojawi się tutaj...</p>
-                    {# TODO: Dodać listę ostatnich meczów #}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
                     <h5><i class="fa fa-calendar"></i> Nadchodzące mecze</h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">Lista zaplanowanych meczów pojawi się tutaj...</p>
-                    {# TODO: Dodać listę nadchodzących meczów #}
+                    {% if upcomingGames|length > 0 %}
+                        <div class="list-group">
+                            {% for game in upcomingGames %}
+                                <a href="{{ ea_url().setController('App\\Controller\\Admin\\GameCrudController').setAction('detail').setEntityId(game.id) }}"
+                                   class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">
+                                            {% if game.isTeamGame %}
+                                                {{ game.teamA.name }} vs {{ game.teamB.name }}
+                                            {% else %}
+                                                Mecz indywidualny
+                                            {% endif %}
+                                        </h6>
+                                        <small>
+                                            <span class="badge
+                                                {% if game.status.value == 'planned' %}bg-secondary{% endif %}
+                                                {% if game.status.value == 'in_progress' %}bg-primary{% endif %}
+                                            ">
+                                                {{ game.status.value }}
+                                            </span>
+                                        </small>
+                                    </div>
+                                    <p class="mb-1">
+                                        <small class="text-muted">
+                                            <i class="fa fa-calendar"></i> {{ game.gameDate|date('d.m.Y H:i') }}
+                                        </small>
+                                        {% if game.league %}
+                                            <br><small><i class="fa fa-trophy"></i> {{ game.league.name }}</small>
+                                        {% endif %}
+                                    </p>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Brak nadchodzących meczów</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="fa fa-check-circle"></i> Zakończone mecze</h5>
+                </div>
+                <div class="card-body">
+                    {% if finishedGames|length > 0 %}
+                        <div class="list-group">
+                            {% for game in finishedGames %}
+                                <a href="{{ ea_url().setController('App\\Controller\\Admin\\GameCrudController').setAction('detail').setEntityId(game.id) }}"
+                                   class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">
+                                            {% if game.isTeamGame %}
+                                                {{ game.teamA.name }} vs {{ game.teamB.name }}
+                                            {% else %}
+                                                Mecz indywidualny
+                                            {% endif %}
+                                        </h6>
+                                        <small>
+                                            <span class="badge bg-success">Zakończony</span>
+                                        </small>
+                                    </div>
+                                    <p class="mb-1">
+                                        <small class="text-muted">
+                                            <i class="fa fa-calendar"></i> {{ game.gameDate|date('d.m.Y') }}
+                                        </small>
+                                        {% if game.league %}
+                                            <br><small><i class="fa fa-trophy"></i> {{ game.league.name }}</small>
+                                        {% endif %}
+                                    </p>
+                                    {% if game.isTeamGame %}
+                                        <p class="mb-0">
+                                            <strong>Wynik:</strong>
+                                            {{ game.teamAScore }} - {{ game.teamBScore }}
+                                        </p>
+                                    {% endif %}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Brak zakończonych meczów</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="alert alert-info">
-                <h5><i class="fa fa-info-circle"></i> Szybki start</h5>
-                <ol>
-                    <li>Utwórz ligę lub wybierz istniejącą</li>
-                    <li>Dodaj drużyny i zawodników (dla gier drużynowych)</li>
-                    <li>Utwórz nowy mecz i ustaw datę oraz ligę</li>
-                    <li>Wygeneruj strukturę meczu (framy)</li>
-                    <li>Wprowadź wyniki dla każdego framu</li>
-                    <li>System automatycznie obliczy wyniki z bonusami za strike i spare</li>
-                </ol>
+    {% if isAdmin %}
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fa fa-gamepad fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Mecze</h5>
+                        <p class="card-text">Zarządzaj meczami</p>
+                        <a href="{{ ea_url().setController('App\\Controller\\Admin\\GameCrudController').setAction('index') }}"
+                           class="btn btn-primary">Przejdź</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fa fa-trophy fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">Ligi</h5>
+                        <p class="card-text">Zarządzaj ligami</p>
+                        <a href="{{ ea_url().setController('App\\Controller\\Admin\\LeagueCrudController').setAction('index') }}"
+                           class="btn btn-warning">Przejdź</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fa fa-users fa-3x text-info mb-3"></i>
+                        <h5 class="card-title">Drużyny</h5>
+                        <p class="card-text">Zarządzaj drużynami</p>
+                        <a href="{{ ea_url().setController('App\\Controller\\Admin\\TeamCrudController').setAction('index') }}"
+                           class="btn btn-info">Przejdź</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fa fa-chart-bar fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">Statystyki</h5>
+                        <p class="card-text">Zobacz rankingi</p>
+                        <a href="{{ path('admin_stats_ranking') }}" class="btn btn-success">Przejdź</a>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    {% endif %}
 {% endblock %}

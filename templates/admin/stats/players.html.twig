@@ -1,0 +1,46 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    Statystyki graczy
+{% endblock %}
+
+{% block main %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Zawodnik</th>
+                        <th>Mecze</th>
+                        <th>Średnia</th>
+                        <th>Min</th>
+                        <th>Max</th>
+                        <th>Strike'i</th>
+                        <th>Spare'y</th>
+                        <th>% Strike</th>
+                        <th>% Spare</th>
+                        <th>Suma</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in stats %}
+                        <tr>
+                            <td class="font-weight-bold">{{ stat.player.fullName }}</td>
+                            <td>{{ stat.gamesCount }}</td>
+                            <td class="text-primary font-weight-bold">{{ stat.avgScore }}</td>
+                            <td>{{ stat.minScore }}</td>
+                            <td class="text-success">{{ stat.maxScore }}</td>
+                            <td>{{ stat.strikes }}</td>
+                            <td>{{ stat.spares }}</td>
+                            <td>{{ stat.strikeRate }}%</td>
+                            <td>{{ stat.spareRate }}%</td>
+                            <td>{{ stat.totalScore }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
