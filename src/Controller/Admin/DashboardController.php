@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller\Admin;
 
 use App\Entity\Frame;
@@ -87,17 +89,22 @@ class DashboardController extends AbstractDashboardController
 
     public function configureMenuItems(): iterable
     {
-        yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
+
+        yield MenuItem::linkToDashboard('Panel', 'fa fa-home');
 
         yield MenuItem::section('Mecze');
-        yield MenuItem::linkToCrud('Mecze', 'fa fa-gamepad', Game::class);
+        yield MenuItem::linkToCrud('Mecze', 'fa fa-gamepad', Game::class)
+            ->setPermission('ROLE_ADMIN');
 
-        yield MenuItem::section('Ligi i drużyny');
-        yield MenuItem::linkToCrud('Ligi', 'fa fa-trophy', League::class);
-        yield MenuItem::linkToCrud('Drużyny', 'fa fa-users', Team::class);
+        if ($isAdmin) {
+            yield MenuItem::section('Ligi i drużyny');
+            yield MenuItem::linkToCrud('Ligi', 'fa fa-trophy', League::class);
+            yield MenuItem::linkToCrud('Drużyny', 'fa fa-users', Team::class);
 
-        yield MenuItem::section('Użytkownicy');
-        yield MenuItem::linkToCrud('Zawodnicy', 'fa fa-user', User::class);
+            yield MenuItem::section('Użytkownicy');
+            yield MenuItem::linkToCrud('Zawodnicy', 'fa fa-user', User::class);
+        }
 
         yield MenuItem::section('Statystyki');
         yield MenuItem::linkToRoute('Ranking', 'fa fa-chart-bar', 'admin_stats_ranking');

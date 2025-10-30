@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Entity\Trait\TimestampTrait;
@@ -106,6 +108,11 @@ class Team
         }
 
         return $this;
+    }
+
+    public function getMembers(): Collection
+    {
+        return $this->getPlayers();
     }
 
     public function removePlayer(User $player): static

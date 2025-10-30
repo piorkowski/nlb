@@ -1,0 +1,100 @@
+ea:
+    action:
+        add_new_item: 'Dodaj nowy'
+        apply: 'Zastosuj'
+        back_to_list: 'Powrót do listy'
+        batch_actions: 'Akcje zbiorcze'
+        cancel: 'Anuluj'
+        choose_file: 'Wybierz plik'
+        close: 'Zamknij'
+        delete: 'Usuń'
+        detail: 'Szczegóły'
+        edit: 'Edytuj'
+        export: 'Eksportuj'
+        filter: 'Filtruj'
+        new: 'Dodaj'
+        remove_selection: 'Usuń zaznaczenie'
+        save: 'Zapisz'
+        save_and_add_another: 'Zapisz i dodaj kolejny'
+        save_and_continue: 'Zapisz i kontynuuj edycję'
+        save_and_return: 'Zapisz i wróć'
+        search: 'Szukaj'
+    add: 'Dodaj'
+    add_new_item: 'Dodaj nowy element'
+    are_you_sure: 'Czy na pewno?'
+    batch_action_modal:
+        title: 'Wykonaj akcję na %count% elementach'
+        content: 'Ta operacja jest nieodwracalna'
+        action: 'Wykonaj'
+    cancel: 'Anuluj'
+    create: 'Utwórz'
+    datagrid:
+        action: 'Akcje'
+        delete: 'Usuń'
+        hidden_results: '%count% wyników nie jest wyświetlanych, zawęź kryteria wyszukiwania'
+        no_results: 'Brak wyników'
+        results: 'Wyniki'
+    delete: 'Usuń'
+    delete_modal:
+        content: 'Czy na pewno chcesz usunąć ten element?'
+        title: 'Potwierdź usunięcie'
+    edit: 'Edytuj'
+    empty_results: 'Brak wyników'
+    exception:
+        access_denied:
+            header: 'Brak dostępu'
+            message: 'Nie masz wystarczających uprawnień do wyświetlenia tej strony.'
+        entity_not_found:
+            header: 'Nie znaleziono'
+            message: 'Żądany element nie został znaleziony.'
+        forbidden_action:
+            header: 'Zabroniona akcja'
+            message: 'Nie możesz wykonać żądanej akcji.'
+    filters:
+        applied: 'Zastosowane filtry'
+        button: 'Filtry'
+        label: 'Filtry'
+        title: 'Filtry'
+    form:
+        are_you_sure: 'Nie zapisano zmian. Czy na pewno chcesz opuścić tę stronę?'
+    label:
+        'false': 'Nie'
+        'null': ''
+        'true': 'Tak'
+    list:
+        no_results: 'Brak wyników'
+        row_actions: 'Akcje'
+    login:
+        password: 'Hasło'
+        remember_me: 'Zapamiętaj mnie'
+        sign_in: 'Zaloguj'
+        submit: 'Zaloguj'
+        title: 'Logowanie'
+        username: 'Nazwa użytkownika'
+    login_page:
+        sign_in: 'Zaloguj'
+        username: 'Nazwa użytkownika'
+        password: 'Hasło'
+    new: 'Nowy'
+    no: 'Nie'
+    pagination:
+        next: 'Następna'
+        previous: 'Poprzednia'
+    reset_filters: 'Resetuj filtry'
+    save: 'Zapisz'
+    search:
+        action: 'Szukaj'
+        no_results: 'Brak wyników'
+        placeholder: 'Szukaj...'
+    title:
+        detail: 'Szczegóły'
+        edit: 'Edytuj'
+        index: 'Lista'
+        new: 'Dodaj nowy'
+        search: 'Wyniki wyszukiwania'
+    user:
+        logged_in_as: 'Zalogowano jako'
+        logout: 'Wyloguj'
+        unnamed: 'Użytkownik bez nazwy'
+        sign_out: 'Wyloguj'
+    yes: 'Tak'
