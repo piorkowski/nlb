@@ -46,7 +46,8 @@ class GameCrudController extends AbstractCrudController
             ->setPageTitle('index', 'Zarządzanie meczami')
             ->setPageTitle('new', 'Dodaj nowy mecz')
             ->setPageTitle('edit', 'Edytuj mecz')
-            ->setPageTitle('detail', 'Szczegóły meczu');
+            ->setPageTitle('detail', 'Szczegóły meczu')
+            ->overrideTemplate('crud/detail', 'admin/game/detail.html.twig');
     }
 
     public function configureActions(Actions $actions): Actions

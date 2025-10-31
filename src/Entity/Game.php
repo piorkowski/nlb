@@ -187,23 +187,28 @@ class Game
      */
     public function getPlayerTotalScore(User $player): int
     {
-        $framesByNumber = [];
+        $framesByGameAndNumber = [];
 
-        // Grupuj framy po numerze (bo mamy dwumecz - 2x10 framów)
         foreach ($this->frames as $frame) {
-            $key = $frame->getGameNumber() . '_' . $frame->getFrameNumber();
-            $framesByNumber[$key][] = $frame;
+            $gameNumber = $frame->getGameNumber();
+            $frameNumber = $frame->getFrameNumber();
+            
+            if (!isset($framesByGameAndNumber[$gameNumber])) {
+                $framesByGameAndNumber[$gameNumber] = [];
+            }
+            
+            $framesByGameAndNumber[$gameNumber][$frameNumber] = $frame;
         }
 
         $totalScore = 0;
 
-        foreach ($framesByNumber as $framesGroup) {
-            // Posortuj framy w grupie
-            usort($framesGroup, fn($a, $b) => $a->getFrameNumber() <=> $b->getFrameNumber());
-
-            foreach ($framesGroup as $index => $frame) {
-                $nextFrame = $framesGroup[$index + 1] ?? null;
-                $nextNextFrame = $framesGroup[$index + 2] ?? null;
+        foreach ($framesByGameAndNumber as $gameNumber => $framesInGame) {
+            ksort($framesInGame);
+            $framesArray = array_values($framesInGame);
+            
+            foreach ($framesArray as $index => $frame) {
+                $nextFrame = $framesArray[$index + 1] ?? null;
+                $nextNextFrame = $framesArray[$index + 2] ?? null;
                 $totalScore += $frame->calculatePlayerScore($player, $nextFrame, $nextNextFrame);
             }
         }

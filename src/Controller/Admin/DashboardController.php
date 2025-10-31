@@ -93,11 +93,16 @@ class DashboardController extends AbstractDashboardController
 
         yield MenuItem::linkToDashboard('Panel', 'fa fa-home');
 
-        yield MenuItem::section('Mecze');
-        yield MenuItem::linkToCrud('Mecze', 'fa fa-gamepad', Game::class)
-            ->setPermission('ROLE_ADMIN');
+        if (!$isAdmin) {
+            yield MenuItem::section('Mój profil');
+            yield MenuItem::linkToRoute('Moje mecze', 'fa fa-gamepad', 'admin_player_my_games');
+            yield MenuItem::linkToRoute('Mój profil', 'fa fa-user', 'admin_player_my_profile');
+        }
 
         if ($isAdmin) {
+            yield MenuItem::section('Mecze');
+            yield MenuItem::linkToCrud('Mecze', 'fa fa-gamepad', Game::class);
+
             yield MenuItem::section('Ligi i drużyny');
             yield MenuItem::linkToCrud('Ligi', 'fa fa-trophy', League::class);
             yield MenuItem::linkToCrud('Drużyny', 'fa fa-users', Team::class);

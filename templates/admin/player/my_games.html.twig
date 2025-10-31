@@ -1,0 +1,120 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}Moje mecze{% endblock %}
+
+{% block main %}
+<div class="content-panel">
+    <div class="mb-4">
+        <h4>Nadchodzące mecze</h4>
+        {% if upcomingGames|length > 0 %}
+            <div class="table-responsive">
+                <table class="table datagrid">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Liga</th>
+                            <th>Przeciwnik</th>
+                            <th>Status</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for game in upcomingGames %}
+                            <tr>
+                                <td>{{ game.gameDate ? game.gameDate|date('d.m.Y H:i') : 'Nie ustalono' }}</td>
+                                <td>{{ game.league ? game.league.name : '-' }}</td>
+                                <td>
+                                    {% if game.isTeamGame %}
+                                        {{ game.teamA.name }} vs {{ game.teamB.name }}
+                                    {% else %}
+                                        {% set players = game.allPlayers %}
+                                        {% for player in players %}
+                                            {% if player.id != user.id %}
+                                                {{ player.fullName }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ game.status.value == 'planned' ? 'info' : 'primary' }}">
+                                        {{ game.status.value == 'planned' ? 'Planowany' : 'W trakcie' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ ea_url().setController('App\\Controller\\Admin\\GameCrudController').setAction('detail').setEntityId(game.id) }}"
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fa fa-eye"></i> Szczegóły
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                Brak nadchodzących meczy
+            </div>
+        {% endif %}
+    </div>
+
+    <div>
+        <h4>Zakończone mecze</h4>
+        {% if finishedGames|length > 0 %}
+            <div class="table-responsive">
+                <table class="table datagrid">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Liga</th>
+                            <th>Przeciwnik</th>
+                            <th>Wynik</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for game in finishedGames %}
+                            <tr>
+                                <td>{{ game.gameDate ? game.gameDate|date('d.m.Y') : 'Nie ustalono' }}</td>
+                                <td>{{ game.league ? game.league.name : '-' }}</td>
+                                <td>
+                                    {% if game.isTeamGame %}
+                                        {{ game.teamA.name }} vs {{ game.teamB.name }}
+                                    {% else %}
+                                        {% set players = game.allPlayers %}
+                                        {% for player in players %}
+                                            {% if player.id != user.id %}
+                                                {{ player.fullName }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ game.getPlayerTotalScore(user) }}</strong>
+                                    {% if game.winner == user.fullName %}
+                                        <span class="badge badge-success ml-2">Wygrana</span>
+                                    {% elseif game.winner == 'DRAW' %}
+                                        <span class="badge badge-warning ml-2">Remis</span>
+                                    {% else %}
+                                        <span class="badge badge-danger ml-2">Przegrana</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ ea_url().setController('App\\Controller\\Admin\\GameCrudController').setAction('detail').setEntityId(game.id) }}"
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fa fa-eye"></i> Szczegóły
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                Brak zakończonych meczy
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

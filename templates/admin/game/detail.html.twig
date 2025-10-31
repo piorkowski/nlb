@@ -1,0 +1,94 @@
+{% extends '@EasyAdmin/crud/detail.html.twig' %}
+
+{% block detail_fields %}
+    {{ parent() }}
+    
+    {% if entity.instance.frames|length > 0 %}
+        <div class="field-group mt-4">
+            <div class="field-group-title">
+                <h3>Wyniki meczu</h3>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table datagrid">
+                    <thead>
+                        <tr>
+                            <th style="width: 200px;">Zawodnik</th>
+                            {% for gameNum in 1..2 %}
+                                {% for frameNum in 1..10 %}
+                                    <th class="text-center" style="min-width: 60px; padding: 0.5rem 0.25rem;">
+                                        <small class="text-muted d-block" style="font-size: 0.7rem;">Gra {{ gameNum }}</small>
+                                        <strong>{{ frameNum }}</strong>
+                                    </th>
+                                {% endfor %}
+                            {% endfor %}
+                            <th class="text-center" style="width: 80px; background-color: var(--body-bg);">
+                                <strong>Suma</strong>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set players = entity.instance.allPlayers %}
+                        {% for player in players %}
+                            <tr>
+                                <td class="font-weight-bold">{{ player.fullName }}</td>
+                                {% set cumulativeScore = 0 %}
+                                {% for gameNum in 1..2 %}
+                                    {% for frameNum in 1..10 %}
+                                        {% set frame = null %}
+                                        {% for f in entity.instance.frames %}
+                                            {% if f.gameNumber == gameNum and f.frameNumber == frameNum %}
+                                                {% set frame = f %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        <td class="text-center p-1" style="vertical-align: middle;">
+                                            {% if frame %}
+                                                {% set playerRolls = frame.getPlayerPins(player) %}
+                                                {% if playerRolls|length > 0 %}
+                                                    <div style="font-size: 0.85rem; line-height: 1.2;">
+                                                        {% if frameNum == 10 %}
+                                                            {% set parts = [] %}
+                                                            {% for rollNum, pins in playerRolls %}
+                                                                {% if pins == 10 %}
+                                                                    {% set parts = parts|merge(['X']) %}
+                                                                {% elseif rollNum > 1 and (playerRolls[rollNum-1] ?? 0) + pins == 10 %}
+                                                                    {% set parts = parts|merge(['/']) %}
+                                                                {% else %}
+                                                                    {% set parts = parts|merge([pins == 0 ? '-' : pins]) %}
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                            <strong>{{ parts|join(' ') }}</strong>
+                                                        {% else %}
+                                                            {% if playerRolls[1] == 10 %}
+                                                                <strong class="text-success">X</strong>
+                                                            {% elseif playerRolls|length == 2 and (playerRolls[1] + playerRolls[2]) == 10 %}
+                                                                <strong>{{ playerRolls[1] == 0 ? '-' : playerRolls[1] }}/</strong>
+                                                            {% else %}
+                                                                {% set parts = [] %}
+                                                                {% for rollNum, pins in playerRolls %}
+                                                                    {% set parts = parts|merge([pins == 0 ? '-' : pins]) %}
+                                                                {% endfor %}
+                                                                {{ parts|join(' ') }}
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    {% endfor %}
+                                {% endfor %}
+                                <td class="text-center font-weight-bold" style="background-color: var(--body-bg); font-size: 1.1rem;">
+                                    {{ entity.instance.getPlayerTotalScore(player) }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

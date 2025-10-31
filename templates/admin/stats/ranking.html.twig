@@ -1,5 +1,6 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
+
 {% block content_title %}
     Ranking graczy
 {% endblock %}
@@ -25,7 +26,7 @@
                         <tr>
                             <td>
                                 {% if position < 3 %}
-                                    <span class="badge 
+                                    <span class="badge
                                         {% if position == 0 %}bg-warning{% endif %}
                                         {% if position == 1 %}bg-secondary{% endif %}
                                         {% if position == 2 %}bg-danger{% endif %}

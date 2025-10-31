@@ -42,8 +42,7 @@ class LeagueCrudController extends AbstractCrudController
     public function configureFilters(Filters $filters): Filters
     {
         return $filters
-            ->add(BooleanFilter::new('isActive', 'Aktywna'))
-            ->add('type');
+            ->add(BooleanFilter::new('isActive', 'Aktywna'));
     }
 
     public function configureFields(string $pageName): iterable
@@ -56,19 +55,6 @@ class LeagueCrudController extends AbstractCrudController
             ->setColumns(8)
             ->setRequired(true)
             ->setHelp('Nazwa ligi (np. "Sezon Jesień 2024")');
-
-        yield ChoiceField::new('type', 'Typ')
-            ->setChoices([
-                'Pojedyncza' => 'single',
-                'Drużynowa' => 'team',
-                'Mieszana' => 'mixed',
-            ])
-            ->setColumns(4)
-            ->renderAsBadges([
-                'single' => 'primary',
-                'team' => 'success',
-                'mixed' => 'info',
-            ]);
 
         yield TextareaField::new('description', 'Opis')
             ->setColumns(12)

@@ -1,0 +1,97 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+
+{% block content_title %}Mój profil{% endblock %}
+
+{% block main %}
+<div class="content-panel">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Podstawowe informacje</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Imię i nazwisko:</dt>
+                        <dd class="col-sm-8">{{ user.fullName }}</dd>
+
+                        <dt class="col-sm-4">Email:</dt>
+                        <dd class="col-sm-8">{{ user.email }}</dd>
+
+                        <dt class="col-sm-4">Role:</dt>
+                        <dd class="col-sm-8">
+                            {% for role in user.roles %}
+                                <span class="badge badge-secondary">{{ role }}</span>
+                            {% endfor %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Moje drużyny</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.teams|length > 0 %}
+                        <ul class="list-group">
+                            {% for team in user.teams %}
+                                <li class="list-group-item">
+                                    {{ team.name }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">Nie należysz do żadnej drużyny</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Moje ligi</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.leagues|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Nazwa</th>
+                                        <th>Data rozpoczęcia</th>
+                                        <th>Data zakończenia</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for league in user.leagues %}
+                                        <tr>
+                                            <td>{{ league.name }}</td>
+                                            <td>{{ league.startDate ? league.startDate|date('d.m.Y') : '-' }}</td>
+                                            <td>{{ league.endDate ? league.endDate|date('d.m.Y') : '-' }}</td>
+                                            <td>
+                                                <span class="badge badge-{{ league.isActive ? 'success' : 'secondary' }}">
+                                                    {{ league.isActive ? 'Aktywna' : 'Nieaktywna' }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Nie uczestniczysz w żadnej lidze</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
