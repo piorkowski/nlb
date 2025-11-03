@@ -53,7 +53,7 @@ class League
     /**
      * @var Collection<int, Game>
      */
-    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'League')]
+    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'league')]
     private Collection $games;
 
     public function __construct()

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\User;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
@@ -44,6 +46,16 @@ class UserCrudController extends AbstractCrudController
             ->add(BooleanFilter::new('isVerified', 'Zweryfikowany'))
             ->add('teams')
             ->add('leagues');
+    }
+
+    public function configureActions(Actions $actions): Actions
+    {
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $actions
+                ->disable(Action::NEW, Action::EDIT, Action::DELETE, Action::BATCH_DELETE);
+        }
+
+        return $actions;
     }
 
     public function configureFields(string $pageName): iterable

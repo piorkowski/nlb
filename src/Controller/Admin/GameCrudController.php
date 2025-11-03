@@ -40,7 +40,7 @@ class GameCrudController extends AbstractCrudController
         return $crud
             ->setEntityLabelInSingular('Mecz')
             ->setEntityLabelInPlural('Mecze')
-            ->setSearchFields(['id', 'notes', 'teamA.name', 'teamB.name'])
+            ->setSearchFields(['id', 'notes', 'teamA.name', 'teamB.name', 'status'])
             ->setDefaultSort(['gameDate' => 'DESC'])
             ->setPaginatorPageSize(20)
             ->setPageTitle('index', 'Zarządzanie meczami')
@@ -62,16 +62,24 @@ class GameCrudController extends AbstractCrudController
             ->displayIf(fn (Game $game) => $game->getFrames()->isEmpty())
             ->setCssClass('btn btn-success');
 
-        return $actions
+        $actions = $actions
             ->add(Crud::PAGE_INDEX, $enterScores)
+            ->add(Crud::PAGE_INDEX, Action::DETAIL)
             ->add(Crud::PAGE_DETAIL, $enterScores)
-            ->add(Crud::PAGE_DETAIL, $generateGame)
-            ->add(Crud::PAGE_INDEX, Action::DETAIL);
+            ->add(Crud::PAGE_DETAIL, $generateGame);
+
+        if (!$this->isGranted('ROLE_ADMIN')) {
+             $actions
+                ->disable(Action::NEW, Action::EDIT, Action::DELETE, Action::BATCH_DELETE);
+        }
+
+        return $actions;
     }
 
     public function configureFields(string $pageName): iterable
     {
         yield IdField::new('id', 'ID')
+            ->hideOnIndex()
             ->hideOnForm();
 
         yield DateTimeField::new('gameDate', 'Data meczu')
@@ -145,7 +153,7 @@ class GameCrudController extends AbstractCrudController
 
             yield DateTimeField::new('createdAt', 'Data utworzenia')
                 ->setFormat('dd.MM.yyyy HH:mm');
-            
+
             yield DateTimeField::new('updatedAt', 'Ostatnia aktualizacja')
                 ->setFormat('dd.MM.yyyy HH:mm');
         }
@@ -202,7 +210,7 @@ class GameCrudController extends AbstractCrudController
         $isReady = $this->gameGenerator->isGameReady($game);
 
         // Pobierz wszystkich graczy z bazy
-        $players = $this->em->getRepository(User::class)->findAll();
+        $players = $this->em->getRepository(User::class)->findBy(['isVerified' => true], ['lastname' => 'ASC', 'firstname' => 'ASC']);
 
         return $this->render('admin/game/generate.html.twig', [
             'game' => $game,
