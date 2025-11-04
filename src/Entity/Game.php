@@ -33,13 +33,12 @@ class Game
     #[ORM\Column(type: Types::STRING, length: 20, enumType: GameStatus::class)]
     private GameStatus $status = GameStatus::DRAFT;
 
-    // Dla meczów drużynowych (opcjonalne)
-    #[ORM\ManyToOne(inversedBy: 'games')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\ManyToOne(targetEntity: Team::class, inversedBy: 'gamesAsTeamA')]
+    #[ORM\JoinColumn(name: 'team_a_id', referencedColumnName: 'id', nullable: true)]
     private ?Team $teamA = null;
 
-    #[ORM\ManyToOne(inversedBy: 'games')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\ManyToOne(targetEntity: Team::class, inversedBy: 'gamesAsTeamB')]
+    #[ORM\JoinColumn(name: 'team_b_id', referencedColumnName: 'id', nullable: true)]
     private ?Team $teamB = null;
 
     // Framy w tym meczu
