@@ -64,12 +64,13 @@ class GameCrudController extends AbstractCrudController
 
         $actions = $actions
             ->add(Crud::PAGE_INDEX, $enterScores)
+            ->add(Crud::PAGE_INDEX, $generateGame)
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
             ->add(Crud::PAGE_DETAIL, $enterScores)
             ->add(Crud::PAGE_DETAIL, $generateGame);
 
         if (!$this->isGranted('ROLE_ADMIN')) {
-             $actions
+            $actions
                 ->disable(Action::NEW, Action::EDIT, Action::DELETE, Action::BATCH_DELETE);
         }
 

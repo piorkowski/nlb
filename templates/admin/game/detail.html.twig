@@ -2,92 +2,240 @@
 
 {% block detail_fields %}
     {{ parent() }}
-    
+
     {% if entity.instance.frames|length > 0 %}
-        <div class="field-group mt-4">
+        <div class="mt-4">
             <div class="field-group-title">
                 <h3>Wyniki meczu</h3>
             </div>
-            
-            <div class="table-responsive">
-                <table class="table datagrid">
-                    <thead>
+
+            {% set players = entity.instance.allPlayers %}
+
+            <div class="mb-4">
+                <h4>
+                    {% set firstFrame = entity.instance.frames|filter(f => f.gameNumber == 1)|first %}
+                    {% if firstFrame %}Tor {{ firstFrame.laneNumber }}{% endif %}
+                </h4>
+                <div class="table-responsive">
+                    <table class="table datagrid">
+                        <thead>
                         <tr>
-                            <th style="width: 200px;">Zawodnik</th>
-                            {% for gameNum in 1..2 %}
-                                {% for frameNum in 1..10 %}
-                                    <th class="text-center" style="min-width: 60px; padding: 0.5rem 0.25rem;">
-                                        <small class="text-muted d-block" style="font-size: 0.7rem;">Gra {{ gameNum }}</small>
-                                        <strong>{{ frameNum }}</strong>
-                                    </th>
-                                {% endfor %}
+                            <th style="width: 180px;">Zawodnik</th>
+                            {% for frameNum in 1..10 %}
+                                <th class="text-center" style="min-width: 60px;">{{ frameNum }}</th>
                             {% endfor %}
                             <th class="text-center" style="width: 80px; background-color: var(--body-bg);">
                                 <strong>Suma</strong>
                             </th>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {% set players = entity.instance.allPlayers %}
+                        </thead>
+                        <tbody>
                         {% for player in players %}
                             <tr>
                                 <td class="font-weight-bold">{{ player.fullName }}</td>
                                 {% set cumulativeScore = 0 %}
-                                {% for gameNum in 1..2 %}
-                                    {% for frameNum in 1..10 %}
-                                        {% set frame = null %}
-                                        {% for f in entity.instance.frames %}
-                                            {% if f.gameNumber == gameNum and f.frameNumber == frameNum %}
-                                                {% set frame = f %}
+                                {% set framesArray = [] %}
+
+                                {# Zbierz wszystkie framy z gry 1 dla tego gracza #}
+                                {% for f in entity.instance.frames %}
+                                    {% if f.gameNumber == 1 %}
+                                        {% set framesArray = framesArray|merge([f]) %}
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% for frameNum in 1..10 %}
+                                    {% set frame = null %}
+                                    {% set nextFrame = null %}
+                                    {% set nextNextFrame = null %}
+
+                                    {# Znajdź aktualny frame i następne #}
+                                    {% for idx, f in framesArray %}
+                                        {% if f.frameNumber == frameNum %}
+                                            {% set frame = f %}
+                                            {% if framesArray[idx + 1] is defined %}
+                                                {% set nextFrame = framesArray[idx + 1] %}
                                             {% endif %}
-                                        {% endfor %}
-                                        <td class="text-center p-1" style="vertical-align: middle;">
-                                            {% if frame %}
-                                                {% set playerRolls = frame.getPlayerPins(player) %}
-                                                {% if playerRolls|length > 0 %}
-                                                    <div style="font-size: 0.85rem; line-height: 1.2;">
-                                                        {% if frameNum == 10 %}
+                                            {% if framesArray[idx + 2] is defined %}
+                                                {% set nextNextFrame = framesArray[idx + 2] %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <td class="text-center p-1" style="vertical-align: middle;">
+                                        {% if frame %}
+                                            {% set playerRolls = frame.getPlayerPins(player) %}
+                                            {% if playerRolls|length > 0 %}
+                                                {# Wyświetl rzuty #}
+                                                <div style="font-size: 0.85rem; line-height: 1.2; border-bottom: 1px solid #dee2e6; padding-bottom: 2px; margin-bottom: 2px;">
+                                                    {% if frameNum == 10 %}
+                                                        {% set parts = [] %}
+                                                        {% for rollNum, pins in playerRolls %}
+                                                            {% if pins == 10 %}
+                                                                {% set parts = parts|merge(['X']) %}
+                                                            {% elseif rollNum > 1 and (playerRolls[rollNum-1] ?? 0) + pins == 10 %}
+                                                                {% set parts = parts|merge(['/']) %}
+                                                            {% else %}
+                                                                {% set parts = parts|merge([pins == 0 ? '-' : pins]) %}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                        <strong>{{ parts|join(' ') }}</strong>
+                                                    {% else %}
+                                                        {% if playerRolls[1] == 10 %}
+                                                            <strong class="text-success">X</strong>
+                                                        {% elseif playerRolls|length == 2 and (playerRolls[1] + playerRolls[2]) == 10 %}
+                                                            <strong>{{ playerRolls[1] == 0 ? '-' : playerRolls[1] }}/</strong>
+                                                        {% else %}
                                                             {% set parts = [] %}
                                                             {% for rollNum, pins in playerRolls %}
-                                                                {% if pins == 10 %}
-                                                                    {% set parts = parts|merge(['X']) %}
-                                                                {% elseif rollNum > 1 and (playerRolls[rollNum-1] ?? 0) + pins == 10 %}
-                                                                    {% set parts = parts|merge(['/']) %}
-                                                                {% else %}
-                                                                    {% set parts = parts|merge([pins == 0 ? '-' : pins]) %}
-                                                                {% endif %}
+                                                                {% set parts = parts|merge([pins == 0 ? '-' : pins]) %}
                                                             {% endfor %}
-                                                            <strong>{{ parts|join(' ') }}</strong>
-                                                        {% else %}
-                                                            {% if playerRolls[1] == 10 %}
-                                                                <strong class="text-success">X</strong>
-                                                            {% elseif playerRolls|length == 2 and (playerRolls[1] + playerRolls[2]) == 10 %}
-                                                                <strong>{{ playerRolls[1] == 0 ? '-' : playerRolls[1] }}/</strong>
-                                                            {% else %}
-                                                                {% set parts = [] %}
-                                                                {% for rollNum, pins in playerRolls %}
-                                                                    {% set parts = parts|merge([pins == 0 ? '-' : pins]) %}
-                                                                {% endfor %}
-                                                                {{ parts|join(' ') }}
-                                                            {% endif %}
+                                                            {{ parts|join(' ') }}
                                                         {% endif %}
-                                                    </div>
-                                                {% else %}
-                                                    <span class="text-muted">-</span>
-                                                {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                                {# Oblicz punkty z bonusami #}
+                                                {% set frameScore = frame.calculatePlayerScore(player, nextFrame, nextNextFrame) %}
+                                                {% set cumulativeScore = cumulativeScore + frameScore %}
+                                                {# Wyświetl kumulatywny wynik #}
+                                                <div style="font-size: 0.9rem; font-weight: bold;">
+                                                    {{ cumulativeScore }}
+                                                </div>
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
-                                        </td>
-                                    {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
                                 {% endfor %}
                                 <td class="text-center font-weight-bold" style="background-color: var(--body-bg); font-size: 1.1rem;">
-                                    {{ entity.instance.getPlayerTotalScore(player) }}
+                                    {{ cumulativeScore }}
                                 </td>
                             </tr>
                         {% endfor %}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Gra 2 #}
+            <div class="mb-4">
+                <h4>
+                    {% set firstFrame = entity.instance.frames|filter(f => f.gameNumber == 2)|first %}
+                    {% if firstFrame %}Tor {{ firstFrame.laneNumber }}{% endif %}
+                </h4>
+                <div class="table-responsive">
+                    <table class="table datagrid">
+                        <thead>
+                        <tr>
+                            <th style="width: 180px;">Zawodnik</th>
+                            {% for frameNum in 1..10 %}
+                                <th class="text-center" style="min-width: 60px;">{{ frameNum }}</th>
+                            {% endfor %}
+                            <th class="text-center" style="width: 80px; background-color: var(--body-bg);">
+                                <strong>Suma</strong>
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for player in players %}
+                            <tr>
+                                <td class="font-weight-bold">{{ player.fullName }}</td>
+                                {% set cumulativeScore = 0 %}
+                                {% set framesArray = [] %}
+
+                                {# Zbierz wszystkie framy z gry 2 dla tego gracza #}
+                                {% for f in entity.instance.frames %}
+                                    {% if f.gameNumber == 2 %}
+                                        {% set framesArray = framesArray|merge([f]) %}
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% for frameNum in 1..10 %}
+                                    {% set frame = null %}
+                                    {% set nextFrame = null %}
+                                    {% set nextNextFrame = null %}
+
+                                    {# Znajdź aktualny frame i następne #}
+                                    {% for idx, f in framesArray %}
+                                        {% if f.frameNumber == frameNum %}
+                                            {% set frame = f %}
+                                            {% if framesArray[idx + 1] is defined %}
+                                                {% set nextFrame = framesArray[idx + 1] %}
+                                            {% endif %}
+                                            {% if framesArray[idx + 2] is defined %}
+                                                {% set nextNextFrame = framesArray[idx + 2] %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <td class="text-center p-1" style="vertical-align: middle;">
+                                        {% if frame %}
+                                            {% set playerRolls = frame.getPlayerPins(player) %}
+                                            {% if playerRolls|length > 0 %}
+                                                {# Wyświetl rzuty #}
+                                                <div style="font-size: 0.85rem; line-height: 1.2; border-bottom: 1px solid #dee2e6; padding-bottom: 2px; margin-bottom: 2px;">
+                                                    {% if frameNum == 10 %}
+                                                        {% set parts = [] %}
+                                                        {% for rollNum, pins in playerRolls %}
+                                                            {% if pins == 10 %}
+                                                                {% set parts = parts|merge(['X']) %}
+                                                            {% elseif rollNum > 1 and (playerRolls[rollNum-1] ?? 0) + pins == 10 %}
+                                                                {% set parts = parts|merge(['/']) %}
+                                                            {% else %}
+                                                                {% set parts = parts|merge([pins == 0 ? '-' : pins]) %}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                        <strong>{{ parts|join(' ') }}</strong>
+                                                    {% else %}
+                                                        {% if playerRolls[1] == 10 %}
+                                                            <strong class="text-success">X</strong>
+                                                        {% elseif playerRolls|length == 2 and (playerRolls[1] + playerRolls[2]) == 10 %}
+                                                            <strong>{{ playerRolls[1] == 0 ? '-' : playerRolls[1] }}/</strong>
+                                                        {% else %}
+                                                            {% set parts = [] %}
+                                                            {% for rollNum, pins in playerRolls %}
+                                                                {% set parts = parts|merge([pins == 0 ? '-' : pins]) %}
+                                                            {% endfor %}
+                                                            {{ parts|join(' ') }}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                                {# Oblicz punkty z bonusami #}
+                                                {% set frameScore = frame.calculatePlayerScore(player, nextFrame, nextNextFrame) %}
+                                                {% set cumulativeScore = cumulativeScore + frameScore %}
+                                                {# Wyświetl kumulatywny wynik #}
+                                                <div style="font-size: 0.9rem; font-weight: bold;">
+                                                    {{ cumulativeScore }}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                                <td class="text-center font-weight-bold" style="background-color: var(--body-bg); font-size: 1.1rem;">
+                                    {{ cumulativeScore }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Suma całkowita #}
+            <div class="alert alert-info">
+                <strong><i class="fa fa-trophy"></i> Wynik całkowity (suma z 2 gier):</strong>
+                <div class="row mt-2">
+                    {% for player in players %}
+                        <div class="col">
+                            {{ player.fullName }}: <strong class="text-primary" style="font-size: 1.3rem;">{{ entity.instance.getPlayerTotalScore(player) }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     {% endif %}

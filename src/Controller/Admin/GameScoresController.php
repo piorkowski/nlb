@@ -31,11 +31,11 @@ class GameScoresController extends AbstractController
         foreach ($frames as $frame) {
             $gameNumber = $frame->getGameNumber();
             $frameNumber = $frame->getFrameNumber();
-            
+
             if (!isset($gamesByNumber[$gameNumber])) {
                 $gamesByNumber[$gameNumber] = [];
             }
-            
+
             $gamesByNumber[$gameNumber][$frameNumber] = $frame;
         }
 
@@ -66,20 +66,20 @@ class GameScoresController extends AbstractController
 
             foreach ($game->getFrames() as $frame) {
                 $frameId = $frame->getId();
-                
+
                 if (!isset($scoresData[$frameId])) {
                     continue;
                 }
 
                 foreach ($scoresData[$frameId] as $playerId => $inputText) {
                     $player = $this->em->getRepository(User::class)->find($playerId);
-                    
+
                     if (!$player || empty(trim($inputText))) {
                         continue;
                     }
 
                     $rolls = $this->parseFrameInput($inputText, $frame->getFrameNumber());
-                    
+
                     if ($rolls === null) {
                         $this->addFlash('warning', "Nieprawidłowy format dla {$player->getFullName()}, frame {$frame->getFrameNumber()}: {$inputText}");
                         continue;
@@ -97,7 +97,8 @@ class GameScoresController extends AbstractController
             $this->addFlash('error', 'Błąd: ' . $e->getMessage());
         }
 
-        return $this->redirectToRoute('admin_game_scores_edit', ['id' => $game->getId()]);
+
+        return $this->redirectToRoute('admin_game_detail', ['entityId' => $game->getId()]);
     }
 
     private function parseFrameInput(string $input, int $frameNumber): ?array
