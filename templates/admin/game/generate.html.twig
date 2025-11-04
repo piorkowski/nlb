@@ -230,16 +230,12 @@
                 if (individualRadio.checked) {
                     individualConfig.style.display = 'block';
                     teamConfig.style.display = 'none';
-                    // Wyłącz required dla team
                     teamConfig.querySelectorAll('[required]').forEach(el => el.removeAttribute('required'));
-                    // Włącz required dla individual
                     individualConfig.querySelectorAll('select').forEach(el => el.setAttribute('required', 'required'));
                 } else {
                     individualConfig.style.display = 'none';
                     teamConfig.style.display = 'block';
-                    // Wyłącz required dla individual
                     individualConfig.querySelectorAll('[required]').forEach(el => el.removeAttribute('required'));
-                    // Włącz required dla team
                     teamConfig.querySelectorAll('select').forEach(el => el.setAttribute('required', 'required'));
                 }
             }
@@ -247,8 +243,33 @@
             individualRadio.addEventListener('change', toggleConfig);
             teamRadio.addEventListener('change', toggleConfig);
 
-            // Ustaw początkowy stan
             toggleConfig();
+
+            // Filtrowanie graczy według drużyn dla gry drużynowej
+            {% if game.teamA and game.teamB %}
+            const teamAPlayerIds = [{% for player in game.teamA.players %}{{ player.id }}{% if not loop.last %},{% endif %}{% endfor %}];
+            const teamBPlayerIds = [{% for player in game.teamB.players %}{{ player.id }}{% if not loop.last %},{% endif %}{% endfor %}];
+
+            // Filtruj selecty dla Team A
+            document.querySelectorAll('select[name^="team[teamA]"]').forEach(select => {
+                Array.from(select.options).forEach(option => {
+                    if (option.value && !teamAPlayerIds.includes(parseInt(option.value))) {
+                        option.style.display = 'none';
+                        option.disabled = true;
+                    }
+                });
+            });
+
+            // Filtruj selecty dla Team B
+            document.querySelectorAll('select[name^="team[teamB]"]').forEach(select => {
+                Array.from(select.options).forEach(option => {
+                    if (option.value && !teamBPlayerIds.includes(parseInt(option.value))) {
+                        option.style.display = 'none';
+                        option.disabled = true;
+                    }
+                });
+            });
+            {% endif %}
         });
     </script>
 

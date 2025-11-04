@@ -8,6 +8,7 @@ use App\Entity\Game;
 use App\Entity\GameStatus;
 use App\Entity\User;
 use App\Service\GameGeneratorService;
+use App\Service\GameNotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
@@ -21,14 +22,19 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Component\HttpFoundation\Response;
 
 class GameCrudController extends AbstractCrudController
 {
     public function __construct(
-        private GameGeneratorService $gameGenerator,
-        private EntityManagerInterface $em
-    ) {}
+        private GameGeneratorService    $gameGenerator,
+        private EntityManagerInterface  $em,
+        private GameNotificationService $notificationService,
+        private AdminUrlGenerator       $adminUrlGenerator
+    )
+    {
+    }
 
     public static function getEntityFqcn(): string
     {
@@ -53,21 +59,34 @@ class GameCrudController extends AbstractCrudController
     public function configureActions(Actions $actions): Actions
     {
         $enterScores = Action::new('enterScores', 'Wpisz wyniki', 'fa fa-edit')
-            ->linkToRoute('admin_game_scores_edit', fn (Game $game) => ['id' => $game->getId()])
-            ->displayIf(fn (Game $game) => !$game->getFrames()->isEmpty())
+            ->linkToRoute('admin_game_scores_edit', fn(Game $game) => ['id' => $game->getId()])
+            ->displayIf(fn(Game $game) => !$game->getFrames()->isEmpty() && $game->getStatus() !== GameStatus::FINISHED && $game->getStatus() !== GameStatus::CANCELLED)
             ->setCssClass('btn btn-warning');
 
         $generateGame = Action::new('generateGame', 'Generuj mecz', 'fa fa-magic')
             ->linkToCrudAction('generateGame')
-            ->displayIf(fn (Game $game) => $game->getFrames()->isEmpty())
+            ->displayIf(fn(Game $game) => $game->getFrames()->isEmpty() && $game->getStatus() === GameStatus::DRAFT)
             ->setCssClass('btn btn-success');
+
+        $finishGame = Action::new('finishGame', 'Zakończ mecz', 'fa fa-check-circle')
+            ->linkToCrudAction('finishGame')
+            ->displayIf(fn(Game $game) => $game->getStatus() === GameStatus::IN_PROGRESS && $game->isComplete())
+            ->setCssClass('btn btn-primary');
+
+        $cancelGame = Action::new('cancelGame', 'Anuluj mecz', 'fa fa-ban')
+            ->linkToCrudAction('cancelGame')
+            ->displayIf(fn(Game $game) => $game->getStatus() !== GameStatus::FINISHED && $game->getStatus() !== GameStatus::CANCELLED)
+            ->setCssClass('btn btn-danger');
 
         $actions = $actions
             ->add(Crud::PAGE_INDEX, $enterScores)
             ->add(Crud::PAGE_INDEX, $generateGame)
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
             ->add(Crud::PAGE_DETAIL, $enterScores)
-            ->add(Crud::PAGE_DETAIL, $generateGame);
+            ->add(Crud::PAGE_DETAIL, $generateGame)
+            ->add(Crud::PAGE_DETAIL, $finishGame)
+            ->add(Crud::PAGE_DETAIL, $cancelGame)
+            ->add(Crud::PAGE_INDEX, $cancelGame);
 
         if (!$this->isGranted('ROLE_ADMIN')) {
             $actions
@@ -80,8 +99,8 @@ class GameCrudController extends AbstractCrudController
     public function configureFields(string $pageName): iterable
     {
         yield IdField::new('id', 'ID')
-            ->hideOnIndex()
-            ->hideOnForm();
+        ->hideOnIndex()
+        ->hideOnForm();
 
         yield DateTimeField::new('gameDate', 'Data meczu')
             ->setColumns(6)
@@ -95,23 +114,27 @@ class GameCrudController extends AbstractCrudController
             ->autocomplete()
             ->setHelp('W jakiej lidze rozgrywany jest mecz');
 
-        yield ChoiceField::new('status', 'Status')
-            ->setColumns(12)
-            ->setChoices([
-                'Szkic' => GameStatus::DRAFT,
-                'Planowany' => GameStatus::PLANNED,
-                'W trakcie' => GameStatus::IN_PROGRESS,
-                'Zakończony' => GameStatus::FINISHED,
-                'Anulowany' => GameStatus::CANCELLED,
-            ])
-            ->renderExpanded()
-            ->renderAsBadges([
-                GameStatus::DRAFT->value => 'secondary',
-                GameStatus::PLANNED->value => 'info',
-                GameStatus::IN_PROGRESS->value => 'primary',
-                GameStatus::FINISHED->value => 'success',
-                GameStatus::CANCELLED->value => 'danger',
-            ]);
+        if ($pageName !== Crud::PAGE_DETAIL) {
+            yield ChoiceField::new('status', 'Status')
+                ->setColumns(12)
+                ->setChoices([
+                    'Szkic' => GameStatus::DRAFT,
+                    'Planowany' => GameStatus::PLANNED,
+                    'W trakcie' => GameStatus::IN_PROGRESS,
+                    'Zakończony' => GameStatus::FINISHED,
+                    'Anulowany' => GameStatus::CANCELLED,
+                ])
+                ->renderExpanded()
+                ->renderAsBadges([
+                    GameStatus::DRAFT->value => 'secondary',
+                    GameStatus::PLANNED->value => 'info',
+                    GameStatus::IN_PROGRESS->value => 'primary',
+                    GameStatus::FINISHED->value => 'success',
+                    GameStatus::CANCELLED->value => 'danger',
+                ])
+                ->setHelp('Status ustawiany automatycznie przez system')
+                ->hideOnForm();
+        }
 
         yield AssociationField::new('teamA', 'Drużyna A')
             ->setColumns(6)
@@ -129,72 +152,86 @@ class GameCrudController extends AbstractCrudController
             ->setHelp('Dodatkowe informacje o meczu');
 
         if ($pageName === Crud::PAGE_DETAIL) {
-            yield TextField::new('gameType', 'Typ gry')
+            yield TextField::new('statusDisplay', 'Status')
+                ->setVirtual(true)
+                ->formatValue(function ($value, Game $game) {
+                    $badges = [
+                        'DRAFT' => '<span class="badge badge-secondary">Szkic</span>',
+                        'PLANNED' => '<span class="badge badge-info">Planowany</span>',
+                        'IN_PROGRESS' => '<span class="badge badge-primary">W trakcie</span>',
+                        'FINISHED' => '<span class="badge badge-success">Zakończony</span>',
+                        'CANCELLED' => '<span class="badge badge-danger">Anulowany</span>',
+                    ];
+                    return $badges[$game->getStatus()->value] ?? $game->getStatus()->value;
+                });
+
+            yield TextField::new('gameTypeDisplay', 'Typ gry')
+                ->setVirtual(true)
                 ->formatValue(function ($value, Game $game) {
                     return $game->isTeamGame() ? 'Drużynowa' : 'Indywidualna';
                 });
 
-            yield IntegerField::new('framesCount', 'Liczba framów')
-                ->formatValue(fn ($value, Game $game) => $game->getFrames()->count());
-
-            yield TextField::new('teamAScoreDisplay', 'Wynik Team A')
+            yield IntegerField::new('framesCountDisplay', 'Liczba framów')
                 ->setVirtual(true)
-                ->formatValue(fn ($value, Game $game) =>
-                $game->isTeamGame() ? (string)$game->getTeamAScore() : 'N/A'
-                );
+                ->formatValue(fn($value, Game $game) => $game->getFrames()->count());
 
-            yield TextField::new('teamBScoreDisplay', 'Wynik Team B')
+            yield TextField::new('winnerDisplay', 'Zwycięzca')
                 ->setVirtual(true)
-                ->formatValue(fn ($value, Game $game) =>
-                $game->isTeamGame() ? (string)$game->getTeamBScore() : 'N/A'
-                );
+                ->formatValue(function ($value, Game $game) {
+                    if ($game->getStatus() !== GameStatus::FINISHED) {
+                        return '<span class="text-muted">Mecz w trakcie</span>';
+                    }
 
-            yield TextField::new('winner', 'Zwycięzca')
-                ->formatValue(fn ($value, Game $game) => $game->getWinner() ?? 'Nierozstrzygnięte');
+                    $winner = $game->getWinner();
+                    if (!$winner) {
+                        return '<span class="badge badge-warning">Remis</span>';
+                    }
 
-            yield DateTimeField::new('createdAt', 'Data utworzenia')
-                ->setFormat('dd.MM.yyyy HH:mm');
+                    if ($game->isTeamGame()) {
+                        $teamAScore = $game->getTeamAScore();
+                        $teamBScore = $game->getTeamBScore();
 
-            yield DateTimeField::new('updatedAt', 'Ostatnia aktualizacja')
-                ->setFormat('dd.MM.yyyy HH:mm');
+                        if ($teamAScore > $teamBScore) {
+                            return '<strong class="text-success">' . $game->getTeamA()->getName() . '</strong> (' . $teamAScore . ' - ' . $teamBScore . ')';
+                        } elseif ($teamBScore > $teamAScore) {
+                            return '<strong class="text-success">' . $game->getTeamB()->getName() . '</strong> (' . $teamBScore . ' - ' . $teamAScore . ')';
+                        }
+                    } else {
+                        $players = $game->getAllPlayers();
+                        $scores = [];
+
+                        foreach ($players as $player) {
+                            $scores[$player->getId()] = [
+                                'name' => $player->getFullName(),
+                                'score' => $game->getPlayerTotalScore($player)
+                            ];
+                        }
+
+                        usort($scores, fn($a, $b) => $b['score'] <=> $a['score']);
+
+                        if (count($scores) >= 2 && $scores[0]['score'] === $scores[1]['score']) {
+                            return '<span class="badge badge-warning">Remis</span> (' . $scores[0]['score'] . ' pkt)';
+                        }
+
+                        return '<strong class="text-success">' . $scores[0]['name'] . '</strong> (' . $scores[0]['score'] . ' pkt)';
+                    }
+
+                    return $winner;
+                });
         }
     }
 
-    /**
-     * Akcja do wyświetlania framów meczu
-     */
-    public function viewFrames(AdminContext $context): Response
+
+    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
-        // Pobierz ID z requesta
-        $entityId = $context->getRequest()->query->get('entityId');
-
-        if (!$entityId) {
-            throw $this->createNotFoundException('Entity ID not provided');
+        if ($entityInstance instanceof Game) {
+            $entityInstance->setStatus(GameStatus::DRAFT);
         }
-
-        // Pobierz encję bezpośrednio z EntityManager
-        $game = $this->em->getRepository(Game::class)->find($entityId);
-
-        if (!$game) {
-            throw $this->createNotFoundException('Game not found');
-        }
-
-        // Pobierz informacje o strukturze z serwisu
-        $structureInfo = $this->gameGenerator->getGameStructureInfo($game);
-
-        return $this->render('admin/game/frames.html.twig', [
-            'game' => $game,
-            'frames' => $game->getFrames(),
-            'structureInfo' => $structureInfo,
-        ]);
+        parent::persistEntity($entityManager, $entityInstance);
     }
 
-    /**
-     * Akcja do generowania struktury meczu
-     */
     public function generateGame(AdminContext $context): Response
     {
-        // Pobierz ID z requesta
         $entityId = $context->getRequest()->query->get('entityId');
 
         if (!$entityId) {
@@ -207,10 +244,7 @@ class GameCrudController extends AbstractCrudController
             throw $this->createNotFoundException('Game not found');
         }
 
-        // Sprawdź czy mecz jest gotowy do generowania
         $isReady = $this->gameGenerator->isGameReady($game);
-
-        // Pobierz wszystkich graczy z bazy
         $players = $this->em->getRepository(User::class)->findBy(['isVerified' => true], ['lastname' => 'ASC', 'firstname' => 'ASC']);
 
         return $this->render('admin/game/generate.html.twig', [
@@ -218,5 +252,125 @@ class GameCrudController extends AbstractCrudController
             'isReady' => $isReady,
             'players' => $players,
         ]);
+    }
+
+    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
+    {
+        if ($entityInstance instanceof Game) {
+            // Pobierz oryginalną datę przed zmianą
+            $unitOfWork = $entityManager->getUnitOfWork();
+            $unitOfWork->computeChangeSets();
+            $changeSet = $unitOfWork->getEntityChangeSet($entityInstance);
+
+            if (isset($changeSet['gameDate'])) {
+                $oldDate = $changeSet['gameDate'][0];
+                $newDate = $changeSet['gameDate'][1];
+
+                // Jeśli data się zmieniła i mecz jest zaplanowany/w trakcie
+                if ($oldDate != $newDate &&
+                    ($entityInstance->getStatus() === GameStatus::PLANNED ||
+                        $entityInstance->getStatus() === GameStatus::IN_PROGRESS)) {
+                    parent::updateEntity($entityManager, $entityInstance);
+
+                    $this->notificationService->notifyGameDateChanged($entityInstance, $oldDate);
+
+                    $this->addFlash('success', 'Mecz zaktualizowany. Gracze otrzymali powiadomienie o zmianie terminu.');
+                    return;
+                }
+            }
+        }
+
+        parent::updateEntity($entityManager, $entityInstance);
+    }
+
+    public function finishGame(AdminContext $context): Response
+    {
+        $entityId = $context->getRequest()->query->get('entityId');
+
+        if (!$entityId) {
+            throw $this->createNotFoundException('Entity ID not provided');
+        }
+
+        $game = $this->em->getRepository(Game::class)->find($entityId);
+
+        if (!$game) {
+            throw $this->createNotFoundException('Game not found');
+        }
+
+        if ($game->getStatus() !== GameStatus::IN_PROGRESS) {
+            $this->addFlash('error', 'Można zakończyć tylko mecz w trakcie');
+            return $this->redirect(
+                $this->adminUrlGenerator
+                    ->setController(self::class)
+                    ->setAction(Action::DETAIL)
+                    ->setEntityId($entityId)
+                    ->generateUrl()
+            );
+        }
+
+        if (!$game->isComplete()) {
+            $this->addFlash('error', 'Nie można zakończyć meczu - nie wszystkie wyniki są wpisane');
+            return $this->redirect(
+                $this->adminUrlGenerator
+                    ->setController(self::class)
+                    ->setAction(Action::DETAIL)
+                    ->setEntityId($entityId)
+                    ->generateUrl()
+            );
+        }
+
+        $game->setStatus(GameStatus::FINISHED);
+        $this->em->flush();
+
+        $this->addFlash('success', 'Mecz został zakończony');
+
+        return $this->redirect(
+            $this->adminUrlGenerator
+                ->setController(self::class)
+                ->setAction(Action::DETAIL)
+                ->setEntityId($entityId)
+                ->generateUrl()
+        );
+    }
+
+    public function cancelGame(AdminContext $context): Response
+    {
+        $entityId = $context->getRequest()->query->get('entityId');
+
+        if (!$entityId) {
+            throw $this->createNotFoundException('Entity ID not provided');
+        }
+
+        $game = $this->em->getRepository(Game::class)->find($entityId);
+
+        if (!$game) {
+            throw $this->createNotFoundException('Game not found');
+        }
+
+        if ($game->getStatus() === GameStatus::FINISHED || $game->getStatus() === GameStatus::CANCELLED) {
+            $this->addFlash('error', 'Nie można anulować zakończonego lub już anulowanego meczu');
+            return $this->redirect(
+                $this->adminUrlGenerator
+                    ->setController(self::class)
+                    ->setAction(Action::DETAIL)
+                    ->setEntityId($entityId)
+                    ->generateUrl()
+            );
+        }
+
+        $game->setStatus(GameStatus::CANCELLED);
+        $this->em->flush();
+
+        $this->notificationService->notifyGameCancelled($game);
+
+        $this->addFlash('success', 'Mecz został anulowany. Gracze otrzymali powiadomienia email.');
+
+        return $this->redirect(
+            $this->adminUrlGenerator
+                ->setController(self::class)
+                ->setAction(Action::DETAIL)
+                ->setEntityId($entityId)
+                ->generateUrl()
+        );
     }
 }

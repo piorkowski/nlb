@@ -163,6 +163,8 @@ class GameGeneratorService
 
         if ($gameType === 'individual') {
             $this->generateIndividualFromRequestData($game, $data['individual'] ?? []);
+            $game->setTeamA(null);
+            $game->setTeamB(null);
         } elseif ($gameType === 'team') {
             $this->generateTeamFromRequestData($game, $data['team'] ?? []);
         } else {

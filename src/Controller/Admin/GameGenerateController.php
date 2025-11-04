@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\Game;
+use App\Entity\GameStatus;
 use App\Service\GameGeneratorService;
+use App\Service\GameNotificationService;
 use Doctrine\ORM\EntityManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,7 +21,9 @@ class GameGenerateController extends AbstractController
 {
     public function __construct(
         private GameGeneratorService $gameGenerator,
-        private EntityManagerInterface $em
+        private GameNotificationService $notificationService,
+        private EntityManagerInterface $em,
+        private AdminUrlGenerator $adminUrlGenerator
     ) {}
 
     #[Route('/{gameId}/process-generate', name: 'admin_game_process_generate', methods: ['POST'])]
@@ -29,67 +35,77 @@ class GameGenerateController extends AbstractController
             throw $this->createNotFoundException('Game not found');
         }
 
-        // Sprawdź czy mecz nie ma już framów
         if ($game->getFrames()->count() > 0) {
             $this->addFlash('error', 'Ten mecz ma już wygenerowane framy!');
-            return $this->redirectToRoute('admin', [
-                'crudAction' => 'detail',
-                'crudControllerFqcn' => GameCrudController::class,
-                'entityId' => $gameId,
-            ]);
+            return $this->redirect(
+                $this->adminUrlGenerator
+                    ->setController(GameCrudController::class)
+                    ->setAction(Action::DETAIL)
+                    ->setEntityId($gameId)
+                    ->generateUrl()
+            );
         }
 
-        // Sprawdź CSRF token
         $token = $request->request->get('_token');
         if (!$this->isCsrfTokenValid('game_generate_' . $gameId, $token)) {
             $this->addFlash('error', 'Nieprawidłowy token CSRF');
-            return $this->redirectToRoute('admin', [
-                'crudAction' => 'generateGame',
-                'crudControllerFqcn' => GameCrudController::class,
-                'entityId' => $gameId,
-            ]);
+            return $this->redirect(
+                $this->adminUrlGenerator
+                    ->setController(GameCrudController::class)
+                    ->setAction('generateGame')
+                    ->setEntityId($gameId)
+                    ->generateUrl()
+            );
         }
 
         try {
-            // Pobierz dane z requesta
             $data = [
                 'gameType' => $request->request->get('gameType'),
                 'individual' => $request->request->all('individual'),
                 'team' => $request->request->all('team'),
             ];
 
-            // Walidacja
             $errors = $this->gameGenerator->validateGameData($data);
             if (!empty($errors)) {
                 foreach ($errors as $error) {
                     $this->addFlash('error', $error);
                 }
-                return $this->redirectToRoute('admin', [
-                    'crudAction' => 'generateGame',
-                    'crudControllerFqcn' => GameCrudController::class,
-                    'entityId' => $gameId,
-                ]);
+                return $this->redirect(
+                    $this->adminUrlGenerator
+                        ->setController(GameCrudController::class)
+                        ->setAction('generateGame')
+                        ->setEntityId($gameId)
+                        ->generateUrl()
+                );
             }
 
-            // Generuj framy używając serwisu
             $this->gameGenerator->generateFramesFromRequest($game, $data);
 
-            $this->addFlash('success', 'Struktura meczu została wygenerowana pomyślnie!');
+            $game->setStatus(GameStatus::PLANNED);
+            $this->em->flush();
 
-            return $this->redirectToRoute('admin', [
-                'crudAction' => 'viewFrames',
-                'crudControllerFqcn' => GameCrudController::class,
-                'entityId' => $gameId,
-            ]);
+            $this->notificationService->notifyGameScheduled($game);
+
+            $this->addFlash('success', 'Struktura meczu została wygenerowana! Status zmieniony na "Planowany". Gracze otrzymali powiadomienia email.');
+
+            return $this->redirect(
+                $this->adminUrlGenerator
+                    ->setController(GameCrudController::class)
+                    ->setAction(Action::DETAIL)
+                    ->setEntityId($gameId)
+                    ->generateUrl()
+            );
 
         } catch (\Exception $e) {
             $this->addFlash('error', 'Błąd podczas generowania: ' . $e->getMessage());
 
-            return $this->redirectToRoute('admin', [
-                'crudAction' => 'generateGame',
-                'crudControllerFqcn' => GameCrudController::class,
-                'entityId' => $gameId,
-            ]);
+            return $this->redirect(
+                $this->adminUrlGenerator
+                    ->setController(GameCrudController::class)
+                    ->setAction('generateGame')
+                    ->setEntityId($gameId)
+                    ->generateUrl()
+            );
         }
     }
 }

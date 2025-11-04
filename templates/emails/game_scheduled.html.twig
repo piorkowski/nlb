@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }
+        .game-details { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .game-details strong { display: inline-block; width: 120px; }
+        .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 15px 0; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎳 Zaplanowano Mecz</h1>
+    </div>
+    <div class="content">
+        <p>Cześć {{ player.fullName }}!</p>
+
+        <p>Zostałeś przypisany do meczu w <strong>{{ game.league.name }}</strong>.</p>
+
+        <div class="game-details">
+            <p><strong>Data:</strong> {{ game.gameDate|date('d.m.Y H:i') }}</p>
+            <p><strong>Liga:</strong> {{ game.league.name }}</p>
+
+            {% if game.isTeamGame %}
+                <p><strong>Typ:</strong> Mecz drużynowy</p>
+                <p><strong>{{ game.teamA.name }}</strong> vs <strong>{{ game.teamB.name }}</strong></p>
+            {% else %}
+                <p><strong>Typ:</strong> Mecz indywidualny</p>
+                {% set opponent = null %}
+                {% for p in game.allPlayers %}
+                    {% if p.id != player.id %}
+                        {% set opponent = p %}
+                    {% endif %}
+                {% endfor %}
+                {% if opponent %}
+                    <p><strong>Przeciwnik:</strong> {{ opponent.fullName }}</p>
+                {% endif %}
+            {% endif %}
+
+            {% if game.notes %}
+                <p><strong>Notatki:</strong> {{ game.notes }}</p>
+            {% endif %}
+        </div>
+
+        <p>Pamiętaj o tej dacie i bądź na czas!</p>
+
+        <p style="text-align: center;">
+            <a href="{{ url('admin') }}?crudAction=detail&crudControllerFqcn=App\\Controller\\Admin\\GameCrudController&entityId={{ game.id }}" class="button">
+                Zobacz szczegóły meczu
+            </a>
+        </p>
+    </div>
+    <div class="footer">
+        <p>Nyska Liga Bowlingowa<br>
+            To jest automatyczna wiadomość, nie odpowiadaj na nią.</p>
+    </div>
+</div>
+</body>
+</html>

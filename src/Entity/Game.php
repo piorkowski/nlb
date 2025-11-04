@@ -192,11 +192,11 @@ class Game
         foreach ($this->frames as $frame) {
             $gameNumber = $frame->getGameNumber();
             $frameNumber = $frame->getFrameNumber();
-            
+
             if (!isset($framesByGameAndNumber[$gameNumber])) {
                 $framesByGameAndNumber[$gameNumber] = [];
             }
-            
+
             $framesByGameAndNumber[$gameNumber][$frameNumber] = $frame;
         }
 
@@ -205,7 +205,7 @@ class Game
         foreach ($framesByGameAndNumber as $gameNumber => $framesInGame) {
             ksort($framesInGame);
             $framesArray = array_values($framesInGame);
-            
+
             foreach ($framesArray as $index => $frame) {
                 $nextFrame = $framesArray[$index + 1] ?? null;
                 $nextNextFrame = $framesArray[$index + 2] ?? null;
@@ -300,11 +300,22 @@ class Game
      */
     public function isComplete(): bool
     {
+        if ($this->frames->isEmpty()) {
+            return false;
+        }
+
+        $players = $this->getAllPlayers();
+
         foreach ($this->frames as $frame) {
-            if (!$frame->isComplete()) {
-                return false;
+            foreach ($players as $player) {
+                $rolls = $frame->getPlayerRolls($player);
+
+                if ($rolls->isEmpty()) {
+                    return false;
+                }
             }
         }
+
         return true;
     }
 

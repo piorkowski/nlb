@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\Game;
+use App\Entity\GameStatus;
 use App\Entity\User;
 use App\Service\RollService;
 use Doctrine\ORM\EntityManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,12 +21,19 @@ class GameScoresController extends AbstractController
 {
     public function __construct(
         private RollService $rollService,
-        private EntityManagerInterface $em
+        private EntityManagerInterface $em,
+        private AdminUrlGenerator $adminUrlGenerator
     ) {}
 
     #[Route('/{id}/edit', name: 'admin_game_scores_edit')]
     public function edit(Game $game): Response
     {
+        // Zmień status na IN_PROGRESS przy pierwszym otwarciu edycji wyników
+        if ($game->getStatus() === GameStatus::PLANNED) {
+            $game->setStatus(GameStatus::IN_PROGRESS);
+            $this->em->flush();
+        }
+
         $players = $game->getAllPlayers();
         $frames = $game->getFrames();
 
@@ -91,14 +101,27 @@ class GameScoresController extends AbstractController
             }
 
             $this->em->flush();
-            $this->addFlash('success', "✅ Zapisano {$savedCount} wyników!");
+
+            // Sprawdź czy mecz jest kompletny i zmień status na FINISHED
+            if ($game->isComplete()) {
+                $game->setStatus(GameStatus::FINISHED);
+                $this->em->flush();
+                $this->addFlash('success', "✅ Zapisano {$savedCount} wyników! Mecz został zakończony.");
+            } else {
+                $this->addFlash('success', "✅ Zapisano {$savedCount} wyników!");
+            }
 
         } catch (\Exception $e) {
             $this->addFlash('error', 'Błąd: ' . $e->getMessage());
         }
 
-
-        return $this->redirectToRoute('admin_game_detail', ['entityId' => $game->getId()]);
+        return $this->redirect(
+            $this->adminUrlGenerator
+                ->setController(GameCrudController::class)
+                ->setAction(Action::DETAIL)
+                ->setEntityId($game->getId())
+                ->generateUrl()
+        );
     }
 
     private function parseFrameInput(string $input, int $frameNumber): ?array
