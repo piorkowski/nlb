@@ -4,38 +4,52 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Trait\TimestampTrait;
 use App\Repository\TeamRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TeamRepository::class)]
-#[ORM\Table(name: 'teams')]
+#[ORM\HasLifecycleCallbacks]
 class Team
 {
+    use TimestampTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 100)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $name = null;
 
-    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'teams')]
-    #[ORM\JoinTable(name: 'team_players')]
-    private Collection $players;
-
-    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'teamA')]
-    private Collection $gamesAsTeamA;
-
-    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'teamB')]
-    private Collection $gamesAsTeamB;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $summary = null;
 
     /**
-     * @var Collection<int, Team>
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'teams')]
+    private Collection $players;
+
+    /**
+     * @var Collection<int, League>
      */
     #[ORM\ManyToMany(targetEntity: League::class, mappedBy: 'teams')]
     private Collection $leagues;
+
+    /**
+     * @var Collection<int, Game>
+     */
+    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'teamA')]
+    private Collection $gamesAsTeamA;
+
+    /**
+     * @var Collection<int, Game>
+     */
+    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'teamB')]
+    private Collection $gamesAsTeamB;
 
     public function __construct()
     {
@@ -43,6 +57,11 @@ class Team
         $this->leagues = new ArrayCollection();
         $this->gamesAsTeamA = new ArrayCollection();
         $this->gamesAsTeamB = new ArrayCollection();
+    }
+
+    public function __toString(): string
+    {
+     return $this->name;
     }
 
     public function getId(): ?int
@@ -58,9 +77,25 @@ class Team
     public function setName(string $name): static
     {
         $this->name = $name;
+
         return $this;
     }
 
+    public function getSummary(): ?string
+    {
+        return $this->summary;
+    }
+
+    public function setSummary(string $summary): static
+    {
+        $this->summary = $summary;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
     public function getPlayers(): Collection
     {
         return $this->players;
@@ -71,67 +106,92 @@ class Team
         if (!$this->players->contains($player)) {
             $this->players->add($player);
         }
+
         return $this;
+    }
+
+    public function getMembers(): Collection
+    {
+        return $this->getPlayers();
     }
 
     public function removePlayer(User $player): static
     {
         $this->players->removeElement($player);
+
         return $this;
     }
 
-    public function getGamesAsTeamA(): Collection
-    {
-        return $this->gamesAsTeamA;
-    }
-
-    public function getGamesAsTeamB(): Collection
-    {
-        return $this->gamesAsTeamB;
-    }
-
-    public function getAllGames(): Collection
-    {
-        $allGames = new ArrayCollection();
-
-        foreach ($this->gamesAsTeamA as $game) {
-            $allGames->add($game);
-        }
-
-        foreach ($this->gamesAsTeamB as $game) {
-            if (!$allGames->contains($game)) {
-                $allGames->add($game);
-            }
-        }
-
-        return $allGames;
-    }
-
+    /**
+     * @return Collection<int, League>
+     */
     public function getLeagues(): Collection
     {
         return $this->leagues;
     }
 
-    public function addLeague(League $league): self
+    public function addLeague(League $league): static
     {
         if (!$this->leagues->contains($league)) {
             $this->leagues->add($league);
+            $league->addTeam($this);
         }
 
         return $this;
     }
 
-    public function removeLeague(League $league): self
+    public function removeLeague(League $league): static
     {
-        if ($this->leagues->contains($league)) {
-            $this->leagues->removeElement($league);
+        if ($this->leagues->removeElement($league)) {
+            $league->removeTeam($this);
         }
 
         return $this;
     }
 
-    public function __toString(): string
+    /**
+     * @return Collection<int, Game>
+     */
+    public function getGames(): Collection
     {
-        return $this->name ?? '';
+        return $this->games;
+    }
+
+    /**
+     * @return Collection<int, Game>
+     */
+    public function getGamesAsTeamA(): Collection
+    {
+        return $this->gamesAsTeamA;
+    }
+
+    /**
+     * @return Collection<int, Game>
+     */
+    public function getGamesAsTeamB(): Collection
+    {
+        return $this->gamesAsTeamB;
+    }
+
+    public function addGame(Game $game): static
+    {
+        if (!$this->games->contains($game)) {
+            $this->games->add($game);
+            $game->setTeam1($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGame(Game $game): static
+    {
+        if ($this->games->removeElement($game)) {
+            // set the owning side to null (unless already changed)
+            if ($game->getTeam1() === $this) {
+                $game->setTeam1(null);
+            }
+        }
+
+        return $this;
     }
 }
