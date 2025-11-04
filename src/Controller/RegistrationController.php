@@ -82,4 +82,28 @@ class RegistrationController extends AbstractController
 
         return $this->redirectToRoute('app_login');
     }
+
+    #[Route('/verify/resend', name: 'app_verify_resend_email')]
+    public function resendVerifyEmail(): Response
+    {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+
+        $user = $this->getUser();
+
+        if ($user->isVerified()) {
+            return $this->redirectToRoute('admin');
+        }
+
+        $this->emailVerifier->sendEmailConfirmation('app_verify_email', $user,
+            (new TemplatedEmail())
+                ->from(new Address('no-reply@nyska-liga.pl', 'Nyska Liga Bowlingowa'))
+                ->to($user->getEmail())
+                ->subject('Potwierdź swój adres email')
+                ->htmlTemplate('registration/confirmation_email.html.twig')
+        );
+
+        $this->addFlash('success', 'Email weryfikacyjny został wysłany ponownie!');
+
+        return $this->render('registration/check_email.html.twig');
+    }
 }
