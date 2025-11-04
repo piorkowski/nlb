@@ -31,9 +31,16 @@ class Team
     #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'teamB')]
     private Collection $gamesAsTeamB;
 
+    /**
+     * @var Collection<int, Team>
+     */
+    #[ORM\ManyToMany(targetEntity: League::class, mappedBy: 'teams')]
+    private Collection $leagues;
+
     public function __construct()
     {
         $this->players = new ArrayCollection();
+        $this->leagues = new ArrayCollection();
         $this->gamesAsTeamA = new ArrayCollection();
         $this->gamesAsTeamB = new ArrayCollection();
     }
@@ -98,6 +105,29 @@ class Team
         }
 
         return $allGames;
+    }
+
+    public function getLeagues(): Collection
+    {
+        return $this->leagues;
+    }
+
+    public function addLeague(League $league): self
+    {
+        if (!$this->leagues->contains($league)) {
+            $this->leagues->add($league);
+        }
+
+        return $this;
+    }
+
+    public function removeLeague(League $league): self
+    {
+        if ($this->leagues->contains($league)) {
+            $this->leagues->removeElement($league);
+        }
+
+        return $this;
     }
 
     public function __toString(): string
