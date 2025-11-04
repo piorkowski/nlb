@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Potwierdź email{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning">
+                        <h3 class="mb-0">📧 Potwierdź swój adres email</h3>
+                    </div>
+                    <div class="card-body">
+                        {% for message in app.flashes('success') %}
+                            <div class="alert alert-success">{{ message }}</div>
+                        {% endfor %}
+
+                        <p>Aby korzystać z systemu, musisz potwierdzić swój adres email.</p>
+                        <p>Sprawdź swoją skrzynkę email i kliknij link weryfikacyjny.</p>
+
+                        <hr>
+
+                        <p class="mb-0">Nie otrzymałeś emaila?</p>
+                        <a href="{{ path('app_verify_resend_email') }}" class="btn btn-primary">
+                            Wyślij ponownie
+                        </a>
+
+                        <a href="{{ path('app_logout') }}" class="btn btn-secondary">
+                            Wyloguj
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
