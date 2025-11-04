@@ -63,7 +63,7 @@
     <div class="row">
         <div class="col-md-6">
             <div class="card mb-4">
-                <div class="card-header bg-info text-white">
+                <div class="card-header">
                     <h5><i class="fa fa-calendar"></i> Nadchodzące mecze</h5>
                 </div>
                 <div class="card-body">
@@ -109,7 +109,7 @@
 
         <div class="col-md-6">
             <div class="card mb-4">
-                <div class="card-header bg-success text-white">
+                <div class="card-header">
                     <h5><i class="fa fa-check-circle"></i> Zakończone mecze</h5>
                 </div>
                 <div class="card-body">
@@ -188,7 +188,7 @@
                         <h5 class="card-title">Drużyny</h5>
                         <p class="card-text">Zarządzaj drużynami</p>
                         <a href="{{ ea_url().setController('App\\Controller\\Admin\\TeamCrudController').setAction('index') }}"
-                           class="btn btn-info">Przejdź</a>
+                           class="btn btn-primary">Przejdź</a>
                     </div>
                 </div>
             </div>
