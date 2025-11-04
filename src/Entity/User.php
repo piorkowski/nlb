@@ -84,12 +84,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToMany(targetEntity: League::class, mappedBy: 'players')]
     private Collection $leagues;
 
-    /**
-     * @var Collection<int, Game>
-     */
-    #[ORM\OneToMany(targetEntity: Game::class, mappedBy: 'players')]
-    private Collection $games;
-
     #[ORM\Column(type: Types::STRING, nullable: true, enumType: Gender::class)]
     private ?Gender $gender = null;
 
@@ -312,36 +306,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if ($this->leagues->removeElement($league)) {
             $league->removePlayer($this);
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Game>
-     */
-    public function getGames(): Collection
-    {
-        return $this->games;
-    }
-
-    public function addGame(Game $game): static
-    {
-        if (!$this->games->contains($game)) {
-            $this->games->add($game);
-            $game->setPlayer1($this);
-        }
-
-        return $this;
-    }
-
-    public function removeGame(Game $game): static
-    {
-        if ($this->games->removeElement($game)) {
-            // set the owning side to null (unless already changed)
-            if ($game->getPlayer1() === $this) {
-                $game->setPlayer1(null);
-            }
         }
 
         return $this;
