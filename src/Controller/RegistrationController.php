@@ -55,7 +55,7 @@ class RegistrationController extends AbstractController
                     ->htmlTemplate('registration/confirmation_email.html.twig')
             );
 
-            $this->addFlash('success', 'Rejestracja udana! Sprawdź swoją skrzynkę email i potwierdź adres.');
+            $this->addFlash('success', 'Rejestracja udana! Sprawdź swoją skrzynkę email i potwierdź adres, aby się zalogować.');
 
             return $this->redirectToRoute('app_login');
         }

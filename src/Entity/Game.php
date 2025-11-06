@@ -43,10 +43,15 @@ class Game
     #[ORM\JoinColumn(name: 'team_b_id', referencedColumnName: 'id', nullable: true)]
     private ?Team $teamB = null;
 
-    // Framy w tym meczu
     #[ORM\OneToMany(targetEntity: Frame::class, mappedBy: 'game', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['laneNumber' => 'ASC', 'gameNumber' => 'ASC', 'frameNumber' => 'ASC'])]
     private Collection $frames;
+
+    #[ORM\Column(type: Types::SMALLINT, nullable: true)]
+    private ?int $teamAPoints = null;
+
+    #[ORM\Column(type: Types::SMALLINT, nullable: true)]
+    private ?int $teamBPoints = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
@@ -318,6 +323,148 @@ class Game
         }
 
         return true;
+    }
+
+    public function getTeamAPoints(): ?int
+    {
+        return $this->teamAPoints;
+    }
+
+    public function setTeamAPoints(?int $teamAPoints): self
+    {
+        $this->teamAPoints = $teamAPoints;
+        return $this;
+    }
+
+    public function getTeamBPoints(): ?int
+    {
+        return $this->teamBPoints;
+    }
+
+    public function setTeamBPoints(?int $teamBPoints): self
+    {
+        $this->teamBPoints = $teamBPoints;
+        return $this;
+    }
+
+    /**
+     * Oblicza punkty za dwumecz według zasady:
+     * - Wygrana na torze = 2 punkty
+     * - Remis na torze = 1 punkt dla każdej drużyny/gracza
+     * - Przegrana = 0 punktów
+     *
+     * Dwumecz = 2 gry, więc max 4 punkty (2+2)
+     */
+    public function calculatePoints(): void
+    {
+        if ($this->status !== GameStatus::FINISHED) {
+            return;
+        }
+
+        if (!$this->isTeamGame()) {
+            $this->calculateIndividualPoints();
+        } else {
+            $this->calculateTeamPoints();
+        }
+    }
+
+    private function calculateTeamPoints(): void
+    {
+        $teamAPointsTotal = 0;
+        $teamBPointsTotal = 0;
+
+        $gamesByNumber = [];
+        foreach ($this->frames as $frame) {
+            $gamesByNumber[$frame->getGameNumber()][] = $frame;
+        }
+
+        foreach ($gamesByNumber as $gameNumber => $framesInGame) {
+            $teamAScore = 0;
+            $teamBScore = 0;
+
+            foreach ($framesInGame as $frame) {
+                foreach ($frame->getTeamAPlayers() as $player) {
+                    $teamAScore += $this->getPlayerTotalScore($player);
+                }
+                foreach ($frame->getTeamBPlayers() as $player) {
+                    $teamBScore += $this->getPlayerTotalScore($player);
+                }
+                break;
+            }
+
+            if ($teamAScore > $teamBScore) {
+                $teamAPointsTotal += 2;
+            } elseif ($teamBScore > $teamAScore) {
+                $teamBPointsTotal += 2;
+            } else {
+                $teamAPointsTotal += 1;
+                $teamBPointsTotal += 1;
+            }
+        }
+
+        $this->teamAPoints = $teamAPointsTotal;
+        $this->teamBPoints = $teamBPointsTotal;
+    }
+
+    private function calculateIndividualPoints(): void
+    {
+        $players = $this->getAllPlayers();
+        if (count($players) !== 2) {
+            return;
+        }
+
+        [$playerA, $playerB] = $players;
+        $pointsA = 0;
+        $pointsB = 0;
+
+        $gamesByNumber = [];
+        foreach ($this->frames as $frame) {
+            $gamesByNumber[$frame->getGameNumber()][] = $frame;
+        }
+
+        foreach ($gamesByNumber as $gameNumber => $framesInGame) {
+            $scoreA = 0;
+            $scoreB = 0;
+
+            foreach ($framesInGame as $frame) {
+                $scoreA += $frame->calculatePlayerScore($playerA);
+                $scoreB += $frame->calculatePlayerScore($playerB);
+            }
+
+            if ($scoreA > $scoreB) {
+                $pointsA += 2;
+            } elseif ($scoreB > $scoreA) {
+                $pointsB += 2;
+            } else {
+                $pointsA += 1;
+                $pointsB += 1;
+            }
+        }
+
+        $this->teamAPoints = $pointsA;
+        $this->teamBPoints = $pointsB;
+    }
+
+    public function getPlayerPoints(User $player): int
+    {
+        if ($this->isTeamGame()) {
+            return 0;
+        }
+
+        $players = $this->getAllPlayers();
+        if (count($players) !== 2) {
+            return 0;
+        }
+
+        if ($players[0]->getId() === $player->getId()) {
+            return $this->teamAPoints ?? 0;
+        }
+
+        if ($players[1]->getId() === $player->getId()) {
+            return $this->teamBPoints ?? 0;
+        }
+
+        return 0;
     }
 
     public function __toString(): string

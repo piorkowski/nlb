@@ -20,10 +20,12 @@ use Symfony\Component\Routing\Annotation\Route;
 class GameScoresController extends AbstractController
 {
     public function __construct(
-        private RollService $rollService,
+        private RollService            $rollService,
         private EntityManagerInterface $em,
-        private AdminUrlGenerator $adminUrlGenerator
-    ) {}
+        private AdminUrlGenerator      $adminUrlGenerator
+    )
+    {
+    }
 
     #[Route('/{id}/edit', name: 'admin_game_scores_edit')]
     public function edit(Game $game): Response
@@ -99,12 +101,13 @@ class GameScoresController extends AbstractController
                     $savedCount++;
                 }
             }
-
             $this->em->flush();
 
-            // Sprawdź czy mecz jest kompletny i zmień status na FINISHED
             if ($game->isComplete()) {
                 $game->setStatus(GameStatus::FINISHED);
+
+                $game->calculatePoints();
+
                 $this->em->flush();
                 $this->addFlash('success', "✅ Zapisano {$savedCount} wyników! Mecz został zakończony.");
             } else {
@@ -200,7 +203,7 @@ class GameScoresController extends AbstractController
         $this->em->flush();
 
         foreach ($rolls as $rollKey => $pinsKnocked) {
-            $rollNum = (int) str_replace('roll', '', $rollKey);
+            $rollNum = (int)str_replace('roll', '', $rollKey);
 
             if ($pinsKnocked === '' || $pinsKnocked === null) {
                 continue;

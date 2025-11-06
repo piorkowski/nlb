@@ -237,6 +237,42 @@
                     {% endfor %}
                 </div>
             </div>
+
+            {% if entity.instance.status.value == 'finished' %}
+                <div class="alert alert-success">
+                    <strong><i class="fa fa-star"></i> Punkty za mecz:</strong>
+                    <div class="row mt-2">
+                        {% if entity.instance.isTeamGame %}
+                            <div class="col">
+                                {{ entity.instance.teamA.name }}:
+                                <strong class="text-success" style="font-size: 1.5rem;">
+                                    {{ entity.instance.teamAPoints ?? 0 }} pkt
+                                </strong>
+                            </div>
+                            <div class="col">
+                                {{ entity.instance.teamB.name }}:
+                                <strong class="text-success" style="font-size: 1.5rem;">
+                                    {{ entity.instance.teamBPoints ?? 0 }} pkt
+                                </strong>
+                            </div>
+                        {% else %}
+                            {% for player in players %}
+                                <div class="col">
+                                    {{ player.fullName }}:
+                                    <strong class="text-success" style="font-size: 1.5rem;">
+                                        {{ entity.instance.getPlayerPoints(player) }} pkt
+                                    </strong>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <small class="text-muted">
+                        <i class="fa fa-info-circle"></i>
+                        System punktacji: Wygrana na torze = 2 pkt, Remis = 1 pkt dla każdego, Przegrana = 0 pkt
+                    </small>
+                </div>
+            {% endif %}
         </div>
     {% endif %}
 {% endblock %}

@@ -79,18 +79,19 @@ class GameCrudController extends AbstractCrudController
             ->setCssClass('btn btn-danger');
 
         $actions = $actions
-            ->add(Crud::PAGE_INDEX, $enterScores)
-            ->add(Crud::PAGE_INDEX, $generateGame)
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
-            ->add(Crud::PAGE_DETAIL, $enterScores)
-            ->add(Crud::PAGE_DETAIL, $generateGame)
-            ->add(Crud::PAGE_DETAIL, $finishGame)
-            ->add(Crud::PAGE_DETAIL, $cancelGame)
-            ->add(Crud::PAGE_INDEX, $cancelGame);
+            ->add(Crud::PAGE_DETAIL, $enterScores);
 
-        if (!$this->isGranted('ROLE_ADMIN')) {
+        if ($this->isGranted('ROLE_ADMIN')) {
             $actions
-                ->disable(Action::NEW, Action::EDIT, Action::DELETE, Action::BATCH_DELETE);
+                ->add(Crud::PAGE_INDEX, $enterScores)
+                ->add(Crud::PAGE_INDEX, $generateGame)
+                ->add(Crud::PAGE_INDEX, $cancelGame)
+                ->add(Crud::PAGE_DETAIL, $generateGame)
+                ->add(Crud::PAGE_DETAIL, $finishGame)
+                ->add(Crud::PAGE_DETAIL, $cancelGame);
+        } else {
+            $actions->disable(Action::NEW, Action::EDIT, Action::DELETE, Action::BATCH_DELETE);
         }
 
         return $actions;
@@ -320,9 +321,17 @@ class GameCrudController extends AbstractCrudController
         }
 
         $game->setStatus(GameStatus::FINISHED);
+
+        $game->calculatePoints();
+
         $this->em->flush();
 
-        $this->addFlash('success', 'Mecz został zakończony');
+        $this->addFlash('success', 'Mecz został zakończony. Punkty: ' .
+            ($game->isTeamGame()
+                ? $game->getTeamA()->getName() . ' (' . $game->getTeamAPoints() . ') vs ' . $game->getTeamB()->getName() . ' (' . $game->getTeamBPoints() . ')'
+                : $game->getTeamAPoints() . ' - ' . $game->getTeamBPoints()
+            )
+        );
 
         return $this->redirect(
             $this->adminUrlGenerator

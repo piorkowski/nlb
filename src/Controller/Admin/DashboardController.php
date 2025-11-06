@@ -93,6 +93,12 @@ class DashboardController extends AbstractDashboardController
 
         yield MenuItem::linkToDashboard('Panel', 'fa fa-home');
 
+        // MECZE DOSTĘPNE DLA WSZYSTKICH
+        yield MenuItem::section('Mecze');
+        yield MenuItem::linkToCrud('Wszystkie mecze', 'fa fa-gamepad', Game::class);
+        yield MenuItem::linkToRoute('Mecze drużynowe', 'fa fa-users', 'admin_games_team');
+        yield MenuItem::linkToRoute('Mecze indywidualne', 'fa fa-user', 'admin_games_individual');
+
         if (!$isAdmin) {
             yield MenuItem::section('Mój profil');
             yield MenuItem::linkToRoute('Moje mecze', 'fa fa-gamepad', 'admin_player_my_games');
@@ -100,9 +106,6 @@ class DashboardController extends AbstractDashboardController
         }
 
         if ($isAdmin) {
-            yield MenuItem::section('Mecze');
-            yield MenuItem::linkToCrud('Mecze', 'fa fa-gamepad', Game::class);
-
             yield MenuItem::section('Ligi i drużyny');
             yield MenuItem::linkToCrud('Ligi', 'fa fa-trophy', League::class);
             yield MenuItem::linkToCrud('Drużyny', 'fa fa-users', Team::class);
