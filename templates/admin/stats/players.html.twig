@@ -1,47 +1,67 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-
 {% block content_title %}
-    Statystyki graczy
+    Statystyki graczy (rzuty i wyniki)
 {% endblock %}
 
 {% block main %}
-<div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-sm table-hover">
-                <thead>
-                    <tr>
-                        <th>Zawodnik</th>
-                        <th>Mecze</th>
-                        <th>Średnia</th>
-                        <th>Min</th>
-                        <th>Max</th>
-                        <th>Strike'i</th>
-                        <th>Spare'y</th>
-                        <th>% Strike</th>
-                        <th>% Spare</th>
-                        <th>Suma</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in stats %}
-                        <tr>
-                            <td class="font-weight-bold">{{ stat.player.fullName }}</td>
-                            <td>{{ stat.gamesCount }}</td>
-                            <td class="text-primary font-weight-bold">{{ stat.avgScore }}</td>
-                            <td>{{ stat.minScore }}</td>
-                            <td class="text-success">{{ stat.maxScore }}</td>
-                            <td>{{ stat.strikes }}</td>
-                            <td>{{ stat.spares }}</td>
-                            <td>{{ stat.strikeRate }}%</td>
-                            <td>{{ stat.spareRate }}%</td>
-                            <td>{{ stat.totalScore }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="mb-3">
+        <div class="btn-group" role="group">
+            <a href="{{ ea_url().setRoute('admin_stats_players') }}"
+               class="btn btn-{{ selectedLeague is null ? 'primary' : 'outline-primary' }}">
+                <i class="fa fa-globe"></i> Wszystkie ligi
+            </a>
+            {% for league in leagues %}
+                <a href="{{ ea_url().setRoute('admin_stats_players').set('league', league.id) }}"
+                   class="btn btn-{{ selectedLeague and selectedLeague.id == league.id ? 'primary' : 'outline-primary' }}">
+                    {{ league.name }}
+                </a>
+            {% endfor %}
         </div>
     </div>
-</div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if stats|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                        <tr>
+                            <th>Zawodnik</th>
+                            <th class="text-center">Mecze</th>
+                            <th class="text-center bg-primary text-white">Średnia</th>
+                            <th class="text-center">Min</th>
+                            <th class="text-center">Max</th>
+                            <th class="text-center">Strike'i</th>
+                            <th class="text-center">Spare'y</th>
+                            <th class="text-center">% Strike</th>
+                            <th class="text-center">% Spare</th>
+                            <th class="text-center">Suma</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for stat in stats %}
+                            <tr>
+                                <td class="fw-bold">{{ stat.player.fullName }}</td>
+                                <td class="text-center">{{ stat.gamesPlayed }}</td>
+                                <td class="text-center bg-primary text-white fw-bold">{{ stat.avgScore }}</td>
+                                <td class="text-center">{{ stat.minScore }}</td>
+                                <td class="text-center text-success">{{ stat.maxScore }}</td>
+                                <td class="text-center">{{ stat.strikes }}</td>
+                                <td class="text-center">{{ stat.spares }}</td>
+                                <td class="text-center">{{ stat.strikeRate }}%</td>
+                                <td class="text-center">{{ stat.spareRate }}%</td>
+                                <td class="text-center">{{ stat.totalScore }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    Brak danych statystycznych
+                </div>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

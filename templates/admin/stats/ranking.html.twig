@@ -1,51 +1,101 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-
 {% block content_title %}
-    Ranking graczy
+    Ranking {{ type == 'team' ? 'drużynowy' : 'indywidualny' }}
 {% endblock %}
 
 {% block main %}
-<div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Zawodnik</th>
-                        <th>Mecze</th>
-                        <th>Suma punktów</th>
-                        <th>Średnia</th>
-                        <th>Strike'i</th>
-                        <th>Spare'y</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for position, stat in stats %}
-                        <tr>
-                            <td>
-                                {% if position < 3 %}
-                                    <span class="badge
-                                        {% if position == 0 %}bg-warning{% endif %}
-                                        {% if position == 1 %}bg-secondary{% endif %}
-                                        {% if position == 2 %}bg-danger{% endif %}
-                                    ">{{ position + 1 }}</span>
-                                {% else %}
-                                    {{ position + 1 }}
-                                {% endif %}
-                            </td>
-                            <td>{{ stat.player.fullName }}</td>
-                            <td>{{ stat.gamesCount }}</td>
-                            <td>{{ stat.totalScore }}</td>
-                            <td class="font-weight-bold">{{ stat.avgScore }}</td>
-                            <td>{{ stat.strikes }}</td>
-                            <td>{{ stat.spares }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="mb-3">
+        <div class="btn-group me-2" role="group">
+            <a href="{{ ea_url().setRoute('admin_stats_ranking').set('type', 'individual').set('league', selectedLeague ? selectedLeague.id : null) }}"
+               class="btn btn-{{ type == 'individual' ? 'primary' : 'outline-primary' }}">
+                <i class="fa fa-user"></i> Indywidualny
+            </a>
+            <a href="{{ ea_url().setRoute('admin_stats_ranking').set('type', 'team').set('league', selectedLeague ? selectedLeague.id : null) }}"
+               class="btn btn-{{ type == 'team' ? 'primary' : 'outline-primary' }}">
+                <i class="fa fa-users"></i> Drużynowy
+            </a>
+        </div>
+
+        <div class="btn-group" role="group">
+            <a href="{{ ea_url().setRoute('admin_stats_ranking').set('type', type) }}"
+               class="btn btn-sm btn-{{ selectedLeague is null ? 'success' : 'outline-success' }}">
+                <i class="fa fa-globe"></i> Wszystkie ligi
+            </a>
+            {% for league in leagues %}
+                <a href="{{ ea_url().setRoute('admin_stats_ranking').set('type', type).set('league', league.id) }}"
+                   class="btn btn-sm btn-{{ selectedLeague and selectedLeague.id == league.id ? 'success' : 'outline-success' }}">
+                    {{ league.name }}
+                </a>
+            {% endfor %}
         </div>
     </div>
-</div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if ranking|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>{{ type == 'team' ? 'Drużyna' : 'Zawodnik' }}</th>
+                            <th class="text-center">Mecze</th>
+                            <th class="text-center bg-warning">Punkty</th>
+                            <th class="text-center">Wygrane</th>
+                            <th class="text-center">Remisy</th>
+                            <th class="text-center">Przegrane</th>
+                            {% if type == 'team' %}
+                                <th class="text-center">Bilans</th>
+                            {% endif %}
+                            <th class="text-center">Suma pkt (bowling)</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for position, stat in ranking %}
+                            <tr>
+                                <td>
+                                    {% if position < 3 %}
+                                        <span class="badge
+                                            {% if position == 0 %}bg-warning text-dark{% endif %}
+                                            {% if position == 1 %}bg-secondary{% endif %}
+                                            {% if position == 2 %}bg-danger{% endif %}
+                                        ">{{ position + 1 }}</span>
+                                    {% else %}
+                                        {{ position + 1 }}
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold">
+                                    {{ type == 'team' ? stat.team.name : stat.player.fullName }}
+                                </td>
+                                <td class="text-center">{{ stat.gamesPlayed }}</td>
+                                <td class="text-center bg-warning fw-bold">{{ stat.points }}</td>
+                                <td class="text-center text-success">{{ stat.wins }}</td>
+                                <td class="text-center text-warning">{{ stat.draws }}</td>
+                                <td class="text-center text-danger">{{ stat.losses }}</td>
+                                {% if type == 'team' %}
+                                    <td class="text-center">
+                                        {{ stat.totalScore }} - {{ stat.totalScoreAgainst }}
+                                        ({{ stat.totalScore - stat.totalScoreAgainst >= 0 ? '+' : '' }}{{ stat.totalScore - stat.totalScoreAgainst }})
+                                    </td>
+                                {% endif %}
+                                <td class="text-center">{{ stat.totalScore }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <i class="fa fa-info-circle"></i>
+                    <strong>System punktacji:</strong> Wygrana na torze = 2 pkt, Remis = 1 pkt dla każdego, Przegrana = 0 pkt.
+                    W dwumeczu maksymalnie można zdobyć 4 punkty (2+2).
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    Brak danych do rankingu
+                </div>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}
