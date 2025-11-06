@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Trait\BlamestampTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\LeagueRepository;
 use DateTimeInterface;
@@ -17,6 +18,7 @@ use Doctrine\ORM\Mapping as ORM;
 class League
 {
     use TimestampTrait;
+    use BlamestampTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

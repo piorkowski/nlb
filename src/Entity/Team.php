@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Trait\BlamestampTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\TeamRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -15,6 +16,7 @@ use Doctrine\ORM\Mapping as ORM;
 class Team
 {
     use TimestampTrait;
+    use BlamestampTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
