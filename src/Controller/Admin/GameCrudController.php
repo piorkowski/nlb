@@ -100,8 +100,8 @@ class GameCrudController extends AbstractCrudController
     public function configureFields(string $pageName): iterable
     {
         yield IdField::new('id', 'ID')
-        ->hideOnIndex()
-        ->hideOnForm();
+            ->hideOnIndex()
+            ->hideOnForm();
 
         yield DateTimeField::new('gameDate', 'Data meczu')
             ->setColumns(6)
@@ -151,6 +151,22 @@ class GameCrudController extends AbstractCrudController
             ->setColumns(12)
             ->hideOnIndex()
             ->setHelp('Dodatkowe informacje o meczu');
+
+        if ($pageName === Crud::PAGE_INDEX) {
+            yield TextField::new('pointsDisplay', 'Punkty')
+                ->setVirtual(true)
+                ->formatValue(function ($value, Game $game) {
+                    if ($game->getStatus() !== GameStatus::FINISHED || $game->getTeamAPoints() === null) {
+                        return '<span class="text-muted">-</span>';
+                    }
+
+                    return sprintf(
+                        '<span class="badge bg-success">%d</span> : <span class="badge bg-success">%d</span>',
+                        $game->getTeamAPoints(),
+                        $game->getTeamBPoints()
+                    );
+                });
+        }
 
         if ($pageName === Crud::PAGE_DETAIL) {
             yield TextField::new('statusDisplay', 'Status')
@@ -218,6 +234,37 @@ class GameCrudController extends AbstractCrudController
                     }
 
                     return $winner;
+                });
+
+            yield TextField::new('pointsDisplay', 'Punkty za mecz')
+                ->setVirtual(true)
+                ->formatValue(function ($value, Game $game) {
+                    if ($game->getStatus() !== GameStatus::FINISHED || $game->getTeamAPoints() === null) {
+                        return '<span class="text-muted">Mecz nie zakończony</span>';
+                    }
+
+                    if ($game->isTeamGame()) {
+                        return sprintf(
+                            '<strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span> | <strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span>',
+                            $game->getTeamA()->getName(),
+                            $game->getTeamAPoints(),
+                            $game->getTeamB()->getName(),
+                            $game->getTeamBPoints()
+                        );
+                    } else {
+                        $players = $game->getAllPlayers();
+                        if (count($players) === 2) {
+                            return sprintf(
+                                '<strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span> | <strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span>',
+                                $players[0]->getFullName(),
+                                $game->getPlayerPoints($players[0]),
+                                $players[1]->getFullName(),
+                                $game->getPlayerPoints($players[1])
+                            );
+                        }
+                    }
+
+                    return '<span class="text-muted">-</span>';
                 });
         }
     }

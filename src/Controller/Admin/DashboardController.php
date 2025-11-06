@@ -12,6 +12,7 @@ use App\Entity\Roll;
 use App\Entity\Team;
 use App\Entity\User;
 use App\Repository\GameRepository;
+use App\Service\StatsService;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
@@ -24,7 +25,8 @@ class DashboardController extends AbstractDashboardController
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private GameRepository $gameRepository
+        private GameRepository $gameRepository,
+        private StatsService $statsService
     ) {}
 
     public function index(): Response
@@ -70,11 +72,16 @@ class DashboardController extends AbstractDashboardController
             ];
         }
 
+        $topIndividual = array_slice($this->statsService->getIndividualRanking(), 0, 3);
+        $topTeam = array_slice($this->statsService->getTeamRanking(), 0, 3);
+
         return $this->render('admin/dashboard.html.twig', [
             'upcomingGames' => $upcomingGames->getQuery()->getResult(),
             'finishedGames' => $finishedGames->getQuery()->getResult(),
             'isAdmin' => $isAdmin,
             'playerInfo' => $playerInfo,
+            'topIndividual' => $topIndividual,
+            'topTeam' => $topTeam,
         ]);
     }
 

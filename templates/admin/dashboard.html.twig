@@ -204,5 +204,105 @@
                 </div>
             </div>
         </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0">
+                            <i class="fa fa-trophy"></i> Top 3 - Ranking indywidualny
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if topIndividual|length > 0 %}
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Zawodnik</th>
+                                    <th class="text-center">Punkty</th>
+                                    <th class="text-center">Mecze</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for position, stat in topIndividual %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge
+                                                {% if position == 0 %}bg-warning text-dark{% endif %}
+                                                {% if position == 1 %}bg-secondary{% endif %}
+                                                {% if position == 2 %}bg-danger{% endif %}
+                                            ">{{ position + 1 }}</span>
+                                        </td>
+                                        <td class="fw-bold">{{ stat.player.fullName }}</td>
+                                        <td class="text-center"><strong>{{ stat.points }}</strong></td>
+                                        <td class="text-center">{{ stat.gamesPlayed }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                            <div class="card-footer text-center">
+                                <a href="{{ ea_url().setRoute('admin_stats_ranking').set('type', 'individual') }}" class="btn btn-sm btn-primary">
+                                    Zobacz pełny ranking <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="card-body">
+                                <p class="text-muted mb-0">Brak danych</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fa fa-users"></i> Top 3 - Ranking drużynowy
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if topTeam|length > 0 %}
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Drużyna</th>
+                                    <th class="text-center">Punkty</th>
+                                    <th class="text-center">Mecze</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for position, stat in topTeam %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge
+                                                {% if position == 0 %}bg-warning text-dark{% endif %}
+                                                {% if position == 1 %}bg-secondary{% endif %}
+                                                {% if position == 2 %}bg-danger{% endif %}
+                                            ">{{ position + 1 }}</span>
+                                        </td>
+                                        <td class="fw-bold">{{ stat.team.name }}</td>
+                                        <td class="text-center"><strong>{{ stat.points }}</strong></td>
+                                        <td class="text-center">{{ stat.gamesPlayed }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                            <div class="card-footer text-center">
+                                <a href="{{ ea_url().setRoute('admin_stats_ranking').set('type', 'team') }}" class="btn btn-sm btn-success">
+                                    Zobacz pełny ranking <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="card-body">
+                                <p class="text-muted mb-0">Brak danych</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     {% endif %}
 {% endblock %}

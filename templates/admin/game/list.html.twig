@@ -16,9 +16,11 @@
                                 <th>Drużyna A</th>
                                 <th>Drużyna B</th>
                                 <th>Wynik</th>
+                                <th>Punkty</th>
                             {% else %}
                                 <th>Gracze</th>
                                 <th>Wynik</th>
+                                <th>Punkty</th>
                             {% endif %}
                             <th>Status</th>
                             <th>Akcje</th>
@@ -40,6 +42,15 @@
                                             <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
+                                    <td>
+                                        {% if game.status.value == 'finished' and game.teamAPoints is not null %}
+                                            <span class="badge bg-success">{{ game.teamAPoints }}</span>
+                                            :
+                                            <span class="badge bg-success">{{ game.teamBPoints }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
                                 {% else %}
                                     <td>
                                         {% set players = game.allPlayers %}
@@ -51,6 +62,17 @@
                                         {% if game.status.value == 'finished' %}
                                             {% for player in players %}
                                                 <strong>{{ player.fullName }}: {{ game.getPlayerTotalScore(player) }}</strong>
+                                                {% if not loop.last %}<br>{% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if game.status.value == 'finished' and game.teamAPoints is not null %}
+                                            {% set players = game.allPlayers %}
+                                            {% for player in players %}
+                                                <span class="badge bg-success">{{ game.getPlayerPoints(player) }}</span>
                                                 {% if not loop.last %}<br>{% endif %}
                                             {% endfor %}
                                         {% else %}
