@@ -46,7 +46,7 @@ class GameCrudController extends AbstractCrudController
         return $crud
             ->setEntityLabelInSingular('Mecz')
             ->setEntityLabelInPlural('Mecze')
-            ->setSearchFields(['id', 'notes', 'teamA.name', 'teamB.name', 'status'])
+            ->setSearchFields(['id', 'notes', 'teamA.name', 'teamB.name'])
             ->setDefaultSort(['gameDate' => 'DESC'])
             ->setPaginatorPageSize(20)
             ->setPageTitle('index', 'Zarządzanie meczami')
