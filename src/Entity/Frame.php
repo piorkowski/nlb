@@ -321,7 +321,11 @@ class Frame
             $nextRoll1 = $nextFrame->getPlayerRoll($player, 1);
             $score += $nextRoll1?->getPinsKnocked() ?? 0;
 
-            if ($nextFrame->isPlayerStrike($player) && $nextNextFrame) {
+            if ($nextFrame->getFrameNumber() === 10) {
+                $nextRoll2 = $nextFrame->getPlayerRoll($player, 2);
+                $score += $nextRoll2?->getPinsKnocked() ?? 0;
+            }
+            elseif ($nextFrame->isPlayerStrike($player) && $nextNextFrame) {
                 $nextNextRoll1 = $nextNextFrame->getPlayerRoll($player, 1);
                 $score += $nextNextRoll1?->getPinsKnocked() ?? 0;
             } else {

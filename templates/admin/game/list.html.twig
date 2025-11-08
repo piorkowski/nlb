@@ -82,18 +82,22 @@
                                 {% endif %}
 
                                 <td>
-                                    <span class="badge
-                                        {% if game.status.value == 'draft' %}bg-secondary{% endif %}
-                                        {% if game.status.value == 'planned' %}bg-info{% endif %}
-                                        {% if game.status.value == 'in_progress' %}bg-primary{% endif %}
-                                        {% if game.status.value == 'finished' %}bg-success{% endif %}
-                                        {% if game.status.value == 'cancelled' %}bg-danger{% endif %}
-                                    ">
-                                        {% if game.status.value == 'draft' %}Szkic{% endif %}
-                                        {% if game.status.value == 'planned' %}Planowany{% endif %}
-                                        {% if game.status.value == 'in_progress' %}W trakcie{% endif %}
-                                        {% if game.status.value == 'finished' %}Zakończony{% endif %}
-                                        {% if game.status.value == 'cancelled' %}Anulowany{% endif %}
+                                    {% set statusLabels = {
+                                        'draft': 'Szkic',
+                                        'planned': 'Planowany',
+                                        'in_progress': 'W trakcie',
+                                        'finished': 'Zakończony',
+                                        'cancelled': 'Anulowany'
+                                    } %}
+                                    {% set statusColors = {
+                                        'draft': 'bg-secondary',
+                                        'planned': 'bg-info',
+                                        'in_progress': 'bg-primary',
+                                        'finished': 'bg-success',
+                                        'cancelled': 'bg-danger'
+                                    } %}
+                                    <span class="badge {{ statusColors[game.status.value] ?? 'bg-secondary' }}">
+                                        {{ statusLabels[game.status.value] ?? game.status.value }}
                                     </span>
                                 </td>
 

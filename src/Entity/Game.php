@@ -382,14 +382,32 @@ class Game
             $teamAScore = 0;
             $teamBScore = 0;
 
+            $framesArray = [];
             foreach ($framesInGame as $frame) {
-                foreach ($frame->getTeamAPlayers() as $player) {
-                    $teamAScore += $this->getPlayerTotalScore($player);
+                $framesArray[$frame->getFrameNumber()] = $frame;
+            }
+            ksort($framesArray);
+            $framesArray = array_values($framesArray);
+
+            $firstFrame = $framesInGame[0];
+            foreach ($firstFrame->getTeamAPlayers() as $player) {
+                $cumulativeScore = 0;
+                foreach ($framesArray as $idx => $frame) {
+                    $nextFrame = $framesArray[$idx + 1] ?? null;
+                    $nextNextFrame = $framesArray[$idx + 2] ?? null;
+                    $cumulativeScore += $frame->calculatePlayerScore($player, $nextFrame, $nextNextFrame);
                 }
-                foreach ($frame->getTeamBPlayers() as $player) {
-                    $teamBScore += $this->getPlayerTotalScore($player);
+                $teamAScore += $cumulativeScore;
+            }
+
+            foreach ($firstFrame->getTeamBPlayers() as $player) {
+                $cumulativeScore = 0;
+                foreach ($framesArray as $idx => $frame) {
+                    $nextFrame = $framesArray[$idx + 1] ?? null;
+                    $nextNextFrame = $framesArray[$idx + 2] ?? null;
+                    $cumulativeScore += $frame->calculatePlayerScore($player, $nextFrame, $nextNextFrame);
                 }
-                break;
+                $teamBScore += $cumulativeScore;
             }
 
             if ($teamAScore > $teamBScore) {
@@ -426,9 +444,18 @@ class Game
             $scoreA = 0;
             $scoreB = 0;
 
+            $framesArray = [];
             foreach ($framesInGame as $frame) {
-                $scoreA += $frame->calculatePlayerScore($playerA);
-                $scoreB += $frame->calculatePlayerScore($playerB);
+                $framesArray[$frame->getFrameNumber()] = $frame;
+            }
+            ksort($framesArray);
+            $framesArray = array_values($framesArray);
+
+            foreach ($framesArray as $idx => $frame) {
+                $nextFrame = $framesArray[$idx + 1] ?? null;
+                $nextNextFrame = $framesArray[$idx + 2] ?? null;
+                $scoreA += $frame->calculatePlayerScore($playerA, $nextFrame, $nextNextFrame);
+                $scoreB += $frame->calculatePlayerScore($playerB, $nextFrame, $nextNextFrame);
             }
 
             if ($scoreA > $scoreB) {
