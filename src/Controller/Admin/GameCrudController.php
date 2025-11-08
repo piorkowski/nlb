@@ -115,7 +115,7 @@ class GameCrudController extends AbstractCrudController
             ->autocomplete()
             ->setHelp('W jakiej lidze rozgrywany jest mecz');
 
-        yield TextField::new('status', 'Status')
+        yield ChoiceField::new('status', 'Status')
             ->setVirtual(true)
             ->hideOnForm()
             ->formatValue(function ($value, Game $game) {
