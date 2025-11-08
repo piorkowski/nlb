@@ -293,7 +293,15 @@ class GameCrudController extends AbstractCrudController
         }
 
         $isReady = $this->gameGenerator->isGameReady($game);
-        $players = $this->em->getRepository(User::class)->findBy(['isVerified' => true], ['lastname' => 'ASC', 'firstname' => 'ASC']);
+
+        $playersQuery = $this->em->getRepository(User::class)
+            ->createQueryBuilder('u')
+            ->where('u.isVerified = :verified')
+            ->setParameter('verified', true)
+            ->orderBy('u.lastname', 'ASC')
+            ->addOrderBy('u.firstname', 'ASC');
+
+        $players = $playersQuery->getQuery()->getResult();
 
         return $this->render('admin/game/generate.html.twig', [
             'game' => $game,
@@ -305,7 +313,6 @@ class GameCrudController extends AbstractCrudController
     public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
         if ($entityInstance instanceof Game) {
-            // Pobierz oryginalną datę przed zmianą
             $unitOfWork = $entityManager->getUnitOfWork();
             $unitOfWork->computeChangeSets();
             $changeSet = $unitOfWork->getEntityChangeSet($entityInstance);
@@ -314,7 +321,6 @@ class GameCrudController extends AbstractCrudController
                 $oldDate = $changeSet['gameDate'][0];
                 $newDate = $changeSet['gameDate'][1];
 
-                // Jeśli data się zmieniła i mecz jest zaplanowany/w trakcie
                 if ($oldDate != $newDate &&
                     ($entityInstance->getStatus() === GameStatus::PLANNED ||
                         $entityInstance->getStatus() === GameStatus::IN_PROGRESS)) {

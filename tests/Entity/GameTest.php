@@ -24,7 +24,7 @@ class GameTest extends TestCase
         $this->game = new Game();
         $this->game->setStatus(GameStatus::DRAFT);
         $this->game->setGameDate(new \DateTimeImmutable());
-        
+
         $league = new League();
         $this->game->setLeague($league);
 
@@ -65,7 +65,7 @@ class GameTest extends TestCase
         $frame->setGameNumber(1);
         $frame->addTeamAPlayer($this->player1);
         $frame->addTeamBPlayer($this->player2);
-        
+
         $this->game->addFrame($frame);
 
         $players = $this->game->getAllPlayers();
@@ -74,8 +74,8 @@ class GameTest extends TestCase
 
     public function testCalculatePointsIndividualGameWin(): void
     {
-        $this->createSimpleIndividualGame(150, 120);
-        
+        $this->createCompleteIndividualGame(150, 120);
+
         $this->game->setStatus(GameStatus::FINISHED);
         $this->game->calculatePoints();
 
@@ -85,8 +85,8 @@ class GameTest extends TestCase
 
     public function testCalculatePointsIndividualGameDraw(): void
     {
-        $this->createSimpleIndividualGame(150, 150);
-        
+        $this->createCompleteIndividualGame(150, 150);
+
         $this->game->setStatus(GameStatus::FINISHED);
         $this->game->calculatePoints();
 
@@ -97,9 +97,9 @@ class GameTest extends TestCase
     public function testCalculatePointsIndividualGameSplit(): void
     {
         for ($gameNumber = 1; $gameNumber <= 2; $gameNumber++) {
-            $score1 = $gameNumber === 1 ? 150 : 120;
-            $score2 = $gameNumber === 1 ? 120 : 150;
-            
+            $pinsPlayer1 = $gameNumber === 1 ? 8 : 6;
+            $pinsPlayer2 = $gameNumber === 1 ? 6 : 8;
+
             for ($frameNumber = 1; $frameNumber <= 10; $frameNumber++) {
                 $frame = new Frame();
                 $frame->setGame($this->game);
@@ -113,15 +113,33 @@ class GameTest extends TestCase
                 $roll1->setFrame($frame);
                 $roll1->setPlayer($this->player1);
                 $roll1->setRollNumber(1);
-                $roll1->setPinsKnocked($frameNumber === 10 ? 10 : (int)($score1 / 10));
+                $roll1->setPinsKnocked($pinsPlayer1);
                 $frame->addRoll($roll1);
+
+                if ($pinsPlayer1 < 10) {
+                    $roll1b = new Roll();
+                    $roll1b->setFrame($frame);
+                    $roll1b->setPlayer($this->player1);
+                    $roll1b->setRollNumber(2);
+                    $roll1b->setPinsKnocked(0);
+                    $frame->addRoll($roll1b);
+                }
 
                 $roll2 = new Roll();
                 $roll2->setFrame($frame);
                 $roll2->setPlayer($this->player2);
                 $roll2->setRollNumber(1);
-                $roll2->setPinsKnocked($frameNumber === 10 ? 10 : (int)($score2 / 10));
+                $roll2->setPinsKnocked($pinsPlayer2);
                 $frame->addRoll($roll2);
+
+                if ($pinsPlayer2 < 10) {
+                    $roll2b = new Roll();
+                    $roll2b->setFrame($frame);
+                    $roll2b->setPlayer($this->player2);
+                    $roll2b->setRollNumber(2);
+                    $roll2b->setPinsKnocked(0);
+                    $frame->addRoll($roll2b);
+                }
 
                 $this->game->addFrame($frame);
             }
@@ -165,7 +183,7 @@ class GameTest extends TestCase
         $this->assertTrue($this->game->isComplete());
     }
 
-    private function createSimpleIndividualGame(int $score1, int $score2): void
+    private function createCompleteIndividualGame(int $score1, int $score2): void
     {
         for ($gameNumber = 1; $gameNumber <= 2; $gameNumber++) {
             for ($frameNumber = 1; $frameNumber <= 10; $frameNumber++) {
@@ -177,19 +195,40 @@ class GameTest extends TestCase
                 $frame->addTeamAPlayer($this->player1);
                 $frame->addTeamBPlayer($this->player2);
 
+                $pins1 = (int)($score1 / 10);
+                $pins2 = (int)($score2 / 10);
+
                 $roll1 = new Roll();
                 $roll1->setFrame($frame);
                 $roll1->setPlayer($this->player1);
                 $roll1->setRollNumber(1);
-                $roll1->setPinsKnocked($frameNumber === 10 ? 10 : (int)($score1 / 10));
+                $roll1->setPinsKnocked($pins1);
                 $frame->addRoll($roll1);
+
+                if ($pins1 < 10) {
+                    $roll1b = new Roll();
+                    $roll1b->setFrame($frame);
+                    $roll1b->setPlayer($this->player1);
+                    $roll1b->setRollNumber(2);
+                    $roll1b->setPinsKnocked(0);
+                    $frame->addRoll($roll1b);
+                }
 
                 $roll2 = new Roll();
                 $roll2->setFrame($frame);
                 $roll2->setPlayer($this->player2);
                 $roll2->setRollNumber(1);
-                $roll2->setPinsKnocked($frameNumber === 10 ? 10 : (int)($score2 / 10));
+                $roll2->setPinsKnocked($pins2);
                 $frame->addRoll($roll2);
+
+                if ($pins2 < 10) {
+                    $roll2b = new Roll();
+                    $roll2b->setFrame($frame);
+                    $roll2b->setPlayer($this->player2);
+                    $roll2b->setRollNumber(2);
+                    $roll2b->setPinsKnocked(0);
+                    $frame->addRoll($roll2b);
+                }
 
                 $this->game->addFrame($frame);
             }

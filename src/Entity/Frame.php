@@ -30,36 +30,32 @@ class Frame
     private ?Game $game = null;
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
-    private int $frameNumber; // 1-10
+    private int $frameNumber;
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
-    private int $laneNumber; // Numer toru
+    private int $laneNumber;
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
-    private int $gameNumber; // 1 lub 2 (dwumecz - zmiana toru)
+    private int $gameNumber;
 
-    // Drużyny (opcjonalne - tylko dla gier drużynowych)
     #[ORM\ManyToOne]
     private ?Team $teamA = null;
 
     #[ORM\ManyToOne]
     private ?Team $teamB = null;
 
-    // Zawodnicy Team A (może być 1 gracz dla individual, 3 dla team)
     #[ORM\ManyToMany(targetEntity: User::class)]
     #[ORM\JoinTable(name: 'frame_team_a_players')]
     #[ORM\JoinColumn(name: 'frame_id', referencedColumnName: 'id')]
     #[ORM\InverseJoinColumn(name: 'user_id', referencedColumnName: 'id')]
     private Collection $teamAPlayers;
 
-    // Zawodnicy Team B
     #[ORM\ManyToMany(targetEntity: User::class)]
     #[ORM\JoinTable(name: 'frame_team_b_players')]
     #[ORM\JoinColumn(name: 'frame_id', referencedColumnName: 'id')]
     #[ORM\InverseJoinColumn(name: 'user_id', referencedColumnName: 'id')]
     private Collection $teamBPlayers;
 
-    // Wszystkie rzuty w tym framie
     #[ORM\OneToMany(targetEntity: Roll::class, mappedBy: 'frame', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['player' => 'ASC', 'rollNumber' => 'ASC'])]
     private Collection $rolls;
@@ -142,9 +138,6 @@ class Frame
         return $this;
     }
 
-    /**
-     * @return Collection<int, User>
-     */
     public function getTeamAPlayers(): Collection
     {
         return $this->teamAPlayers;
@@ -170,9 +163,6 @@ class Frame
         return $this;
     }
 
-    /**
-     * @return Collection<int, User>
-     */
     public function getTeamBPlayers(): Collection
     {
         return $this->teamBPlayers;
@@ -198,9 +188,6 @@ class Frame
         return $this;
     }
 
-    /**
-     * @return Collection<int, Roll>
-     */
     public function getRolls(): Collection
     {
         return $this->rolls;
@@ -225,19 +212,11 @@ class Frame
         return $this;
     }
 
-    // === Helper methods ===
-
-    /**
-     * Pobiera rzuty konkretnego gracza
-     */
     public function getPlayerRolls(User $player): Collection
     {
         return $this->rolls->filter(fn(Roll $roll) => $roll->getPlayer() === $player);
     }
 
-    /**
-     * Pobiera wszystkie rzuty Team A
-     */
     public function getTeamARolls(): Collection
     {
         return $this->rolls->filter(function(Roll $roll) {
@@ -245,9 +224,6 @@ class Frame
         });
     }
 
-    /**
-     * Pobiera wszystkie rzuty Team B
-     */
     public function getTeamBRolls(): Collection
     {
         return $this->rolls->filter(function(Roll $roll) {
@@ -255,9 +231,6 @@ class Frame
         });
     }
 
-    /**
-     * Pobiera konkretny rzut gracza
-     */
     public function getPlayerRoll(User $player, int $rollNumber): ?Roll
     {
         return $this->rolls->filter(
@@ -265,9 +238,6 @@ class Frame
         )->first() ?: null;
     }
 
-    /**
-     * Pobiera sumę kręgli gracza w tym framie
-     */
     public function getPlayerTotalPins(User $player): int
     {
         return $this->getPlayerRolls($player)
@@ -275,9 +245,6 @@ class Frame
             ->reduce(fn($carry, $pins) => $carry + $pins, 0);
     }
 
-    /**
-     * Pobiera tablicę [rollNumber => pinsKnocked] dla gracza
-     */
     public function getPlayerPins(User $player): array
     {
         $pins = [];
@@ -287,8 +254,6 @@ class Frame
         ksort($pins);
         return $pins;
     }
-
-    // === Scoring logic dla pojedynczego gracza ===
 
     public function isPlayerStrike(User $player): bool
     {
@@ -432,7 +397,6 @@ class Frame
         return sprintf('Frame %d (Game %d, Lane %d)', $this->frameNumber, $this->gameNumber, $this->laneNumber);
     }
 
-
     private function checkIsTeamFinished(Collection $teamPlayers): bool
     {
         foreach ($teamPlayers as $player) {
@@ -442,15 +406,18 @@ class Frame
                 if ($rollsCount < 2) {
                     return false;
                 }
-                if ($rollsCount < 3 && ($this->isPlayerStrike($player) || $this->isPlayerSpare($player))) {
+                if (($this->isPlayerStrike($player) || $this->isPlayerSpare($player)) && $rollsCount < 3) {
                     return false;
                 }
             } else {
-                if ($rollsCount < 1 && $this->isPlayerStrike($player)) {
-                    return false;
-                }
-                if ($rollsCount < 2 && !$this->isPlayerStrike($player)) {
-                    return false;
+                if ($this->isPlayerStrike($player)) {
+                    if ($rollsCount < 1) {
+                        return false;
+                    }
+                } else {
+                    if ($rollsCount < 2) {
+                        return false;
+                    }
                 }
             }
         }
