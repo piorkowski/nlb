@@ -89,6 +89,13 @@ class GameScoresController extends AbstractController
                         continue;
                     }
 
+                    $isInTeamA = $frame->getTeamAPlayers()->contains($player);
+                    $isInTeamB = $frame->getTeamBPlayers()->contains($player);
+
+                    if (!$isInTeamA && !$isInTeamB) {
+                        continue;
+                    }
+
                     $rolls = $this->parseFrameInput($inputText, $frame->getFrameNumber());
 
                     if ($rolls === null) {
