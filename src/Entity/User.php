@@ -91,7 +91,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->teams = new ArrayCollection();
         $this->leagues = new ArrayCollection();
-        $this->games = new ArrayCollection();
     }
 
     public function __toString(): string
@@ -265,7 +264,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->teams;
     }
 
-    public function addTeam(Team $team): static
+    public function addTeam(Team $team): self
     {
         if (!$this->teams->contains($team)) {
             $this->teams->add($team);
@@ -275,7 +274,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function removeTeam(Team $team): static
+    public function removeTeam(Team $team): self
     {
         if ($this->teams->removeElement($team)) {
             $team->removePlayer($this);
@@ -292,7 +291,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->leagues;
     }
 
-    public function addLeague(League $league): static
+    public function addLeague(League $league): self
     {
         if (!$this->leagues->contains($league)) {
             $this->leagues->add($league);
@@ -302,7 +301,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function removeLeague(League $league): static
+    public function removeLeague(League $league): self
     {
         if ($this->leagues->removeElement($league)) {
             $league->removePlayer($this);
