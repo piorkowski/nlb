@@ -115,7 +115,7 @@ class GameCrudController extends AbstractCrudController
             ->autocomplete()
             ->setHelp('W jakiej lidze rozgrywany jest mecz');
 
-        yield TextField::new('statusDisplay', 'Status')
+        yield TextField::new('status', 'Status')
             ->setVirtual(true)
             ->hideOnForm()
             ->formatValue(function ($value, Game $game) {
@@ -200,9 +200,9 @@ class GameCrudController extends AbstractCrudController
                         $teamBScore = $game->getTeamBScore();
 
                         if ($teamAScore > $teamBScore) {
-                            return '<strong class="text-success">' . $game->getTeamA()->getName() . '</strong> (' . $teamAScore . ' - ' . $teamBScore . ')';
+                            return '<strong class="text-success">' . $game->getTeamA()?->getName() . '</strong> (' . $teamAScore . ' - ' . $teamBScore . ')';
                         } elseif ($teamBScore > $teamAScore) {
-                            return '<strong class="text-success">' . $game->getTeamB()->getName() . '</strong> (' . $teamBScore . ' - ' . $teamAScore . ')';
+                            return '<strong class="text-success">' . $game->getTeamB()?->getName() . '</strong> (' . $teamBScore . ' - ' . $teamAScore . ')';
                         }
                     } else {
                         $players = $game->getAllPlayers();
@@ -237,9 +237,9 @@ class GameCrudController extends AbstractCrudController
                     if ($game->isTeamGame()) {
                         return sprintf(
                             '<strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span> | <strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span>',
-                            $game->getTeamA()->getName(),
+                            $game->getTeamA()?->getName(),
                             $game->getTeamAPoints(),
-                            $game->getTeamB()->getName(),
+                            $game->getTeamB()?->getName(),
                             $game->getTeamBPoints()
                         );
                     } else {
