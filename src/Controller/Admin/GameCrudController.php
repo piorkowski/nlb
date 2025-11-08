@@ -115,27 +115,9 @@ class GameCrudController extends AbstractCrudController
             ->autocomplete()
             ->setHelp('W jakiej lidze rozgrywany jest mecz');
 
-        yield ChoiceField::new('status', 'Status')
-            ->setColumns(12)
-            ->setChoices([
-                'Szkic' => GameStatus::DRAFT,
-                'Planowany' => GameStatus::PLANNED,
-                'W trakcie' => GameStatus::IN_PROGRESS,
-                'Zakończony' => GameStatus::FINISHED,
-                'Anulowany' => GameStatus::CANCELLED,
-            ])
-            ->renderExpanded()
-            ->renderAsBadges([
-                GameStatus::DRAFT->value => 'secondary',
-                GameStatus::PLANNED->value => 'info',
-                GameStatus::IN_PROGRESS->value => 'primary',
-                GameStatus::FINISHED->value => 'success',
-                GameStatus::CANCELLED->value => 'danger',
-            ])
-            ->setHelp('Status ustawiany automatycznie przez system')
-            ->hideOnForm()
-            ->formatValue(function ($value, Game $game) use ($pageName) {
-                if ($pageName === Crud::PAGE_INDEX) {
+        if ($pageName === Crud::PAGE_INDEX) {
+            yield TextField::new('status', 'Status')
+                ->formatValue(function ($value, Game $game) {
                     $statusLabels = [
                         GameStatus::DRAFT->value => 'Szkic',
                         GameStatus::PLANNED->value => 'Planowany',
@@ -143,10 +125,41 @@ class GameCrudController extends AbstractCrudController
                         GameStatus::FINISHED->value => 'Zakończony',
                         GameStatus::CANCELLED->value => 'Anulowany',
                     ];
-                    return $statusLabels[$game->getStatus()->value] ?? $game->getStatus()->value;
-                }
-                return $value;
-            });
+
+                    $badges = [
+                        GameStatus::DRAFT->value => 'secondary',
+                        GameStatus::PLANNED->value => 'info',
+                        GameStatus::IN_PROGRESS->value => 'primary',
+                        GameStatus::FINISHED->value => 'success',
+                        GameStatus::CANCELLED->value => 'danger',
+                    ];
+
+                    $label = $statusLabels[$game->getStatus()->value] ?? $game->getStatus()->value;
+                    $badge = $badges[$game->getStatus()->value] ?? 'secondary';
+
+                    return sprintf('<span class="badge badge-%s">%s</span>', $badge, $label);
+                });
+        } else {
+            yield ChoiceField::new('status', 'Status')
+                ->setColumns(12)
+                ->setChoices([
+                    'Szkic' => GameStatus::DRAFT,
+                    'Planowany' => GameStatus::PLANNED,
+                    'W trakcie' => GameStatus::IN_PROGRESS,
+                    'Zakończony' => GameStatus::FINISHED,
+                    'Anulowany' => GameStatus::CANCELLED,
+                ])
+                ->renderExpanded()
+                ->renderAsBadges([
+                    GameStatus::DRAFT->value => 'secondary',
+                    GameStatus::PLANNED->value => 'info',
+                    GameStatus::IN_PROGRESS->value => 'primary',
+                    GameStatus::FINISHED->value => 'success',
+                    GameStatus::CANCELLED->value => 'danger',
+                ])
+                ->setHelp('Status ustawiany automatycznie przez system')
+                ->hideOnForm();
+        }
 
         yield AssociationField::new('teamA', 'Drużyna A')
             ->setColumns(6)
