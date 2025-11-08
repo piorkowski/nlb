@@ -15,18 +15,21 @@ class GameGeneratorService
 {
     public function __construct(
         private EntityManagerInterface $em
-    ) {}
+    )
+    {
+    }
 
     /**
      * Tworzy grę indywidualną 1v1
      */
     public function createIndividualGame(
-        League $league,
-        User $player1,
-        User $player2,
+        League             $league,
+        User               $player1,
+        User               $player2,
         \DateTimeImmutable $date,
-        int $startLane = 1
-    ): Game {
+        int                $startLane = 1
+    ): Game
+    {
         $game = new Game();
         $game->setLeague($league);
         $game->setGameDate($date);
@@ -47,8 +50,8 @@ class GameGeneratorService
         League $league,
         Team $team1,
         Team $team2,
-        array $team1Players, // 3 zawodników
-        array $team2Players, // 3 zawodników
+        array $team1Players,
+        array $team2Players,
         \DateTimeImmutable $date,
         int $startLane = 1
     ): Game {
@@ -62,7 +65,6 @@ class GameGeneratorService
         $game->setTeamB($team2);
         $game->setGameDate($date);
 
-        // Generuj framy
         $this->generateTeamFrames($game, $team1, $team2, $team1Players, $team2Players, $startLane);
 
         $this->em->persist($game);
@@ -78,8 +80,9 @@ class GameGeneratorService
         Game $game,
         User $player1,
         User $player2,
-        int $startLane = 1
-    ): void {
+        int  $startLane = 1
+    ): void
+    {
         // Sprawdź czy mecz nie ma już framów
         if ($game->getFrames()->count() > 0) {
             throw new \RuntimeException('Game already has frames generated');
@@ -110,14 +113,14 @@ class GameGeneratorService
      * Generuje framy dla istniejącego meczu drużynowego
      */
     public function generateTeamFrames(
-        Game $game,
-        Team $team1,
-        Team $team2,
+        Game  $game,
+        Team  $team1,
+        Team  $team2,
         array $team1Players,
         array $team2Players,
-        int $startLane = 1
-    ): void {
-        // Sprawdź czy mecz nie ma już framów
+        int   $startLane = 1
+    ): void
+    {
         if ($game->getFrames()->count() > 0) {
             throw new \RuntimeException('Game already has frames generated');
         }
@@ -126,30 +129,25 @@ class GameGeneratorService
             throw new \InvalidArgumentException('Each team must have exactly 3 players');
         }
 
-        // 3 pary zawodników
-        for ($pairIndex = 0; $pairIndex < 3; $pairIndex++) {
-            $player1 = $team1Players[$pairIndex];
-            $player2 = $team2Players[$pairIndex];
-            $lane = $startLane + $pairIndex;
+        for ($gameNum = 1; $gameNum <= 2; $gameNum++) {
+            for ($frameNum = 1; $frameNum <= 10; $frameNum++) {
+                $frame = new Frame();
+                $frame->setGame($game);
+                $frame->setFrameNumber($frameNum);
+                $frame->setLaneNumber($startLane);
+                $frame->setGameNumber($gameNum);
+                $frame->setTeamA($team1);
+                $frame->setTeamB($team2);
 
-            // Dwumecz dla każdej pary (2 gry z zamianą torów)
-            for ($gameNum = 1; $gameNum <= 2; $gameNum++) {
-                for ($frameNum = 1; $frameNum <= 10; $frameNum++) {
-                    $frame = new Frame();
-                    $frame->setGame($game);
-                    $frame->setFrameNumber($frameNum);
-                    $frame->setLaneNumber($lane);
-                    $frame->setGameNumber($gameNum);
-                    $frame->setTeamA($team1);
-                    $frame->setTeamB($team2);
-
-                    // Dodaj graczy tej pary
-                    $frame->addTeamAPlayer($player1);
-                    $frame->addTeamBPlayer($player2);
-
-                    $game->addFrame($frame);
-                    $this->em->persist($frame);
+                foreach ($team1Players as $player) {
+                    $frame->addTeamAPlayer($player);
                 }
+                foreach ($team2Players as $player) {
+                    $frame->addTeamBPlayer($player);
+                }
+
+                $game->addFrame($frame);
+                $this->em->persist($frame);
             }
         }
     }
@@ -181,7 +179,7 @@ class GameGeneratorService
     {
         $playerAId = $individualData['playerA'] ?? null;
         $playerBId = $individualData['playerB'] ?? null;
-        $startLane = (int) ($individualData['startLane'] ?? 1);
+        $startLane = (int)($individualData['startLane'] ?? 1);
 
         if (!$playerAId || !$playerBId) {
             throw new \InvalidArgumentException('Musisz wybrać obu graczy');
@@ -212,7 +210,6 @@ class GameGeneratorService
 
         $startLane = (int) ($teamData['startLane'] ?? 1);
 
-        // Pobierz graczy drużyny A
         $teamAPlayers = [];
         for ($i = 1; $i <= 3; $i++) {
             $playerId = $teamData['teamA']['player' . $i] ?? null;
@@ -226,7 +223,6 @@ class GameGeneratorService
             $teamAPlayers[] = $player;
         }
 
-        // Pobierz graczy drużyny B
         $teamBPlayers = [];
         for ($i = 1; $i <= 3; $i++) {
             $playerId = $teamData['teamB']['player' . $i] ?? null;
