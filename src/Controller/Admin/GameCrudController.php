@@ -115,27 +115,38 @@ class GameCrudController extends AbstractCrudController
             ->autocomplete()
             ->setHelp('W jakiej lidze rozgrywany jest mecz');
 
-        if ($pageName !== Crud::PAGE_DETAIL) {
-            yield ChoiceField::new('status', 'Status')
-                ->setColumns(12)
-                ->setChoices([
-                    'Szkic' => GameStatus::DRAFT,
-                    'Planowany' => GameStatus::PLANNED,
-                    'W trakcie' => GameStatus::IN_PROGRESS,
-                    'Zakończony' => GameStatus::FINISHED,
-                    'Anulowany' => GameStatus::CANCELLED,
-                ])
-                ->renderExpanded()
-                ->renderAsBadges([
-                    GameStatus::DRAFT->value => 'secondary',
-                    GameStatus::PLANNED->value => 'info',
-                    GameStatus::IN_PROGRESS->value => 'primary',
-                    GameStatus::FINISHED->value => 'success',
-                    GameStatus::CANCELLED->value => 'danger',
-                ])
-                ->setHelp('Status ustawiany automatycznie przez system')
-                ->hideOnForm();
-        }
+        yield ChoiceField::new('status', 'Status')
+            ->setColumns(12)
+            ->setChoices([
+                'Szkic' => GameStatus::DRAFT,
+                'Planowany' => GameStatus::PLANNED,
+                'W trakcie' => GameStatus::IN_PROGRESS,
+                'Zakończony' => GameStatus::FINISHED,
+                'Anulowany' => GameStatus::CANCELLED,
+            ])
+            ->renderExpanded()
+            ->renderAsBadges([
+                GameStatus::DRAFT->value => 'secondary',
+                GameStatus::PLANNED->value => 'info',
+                GameStatus::IN_PROGRESS->value => 'primary',
+                GameStatus::FINISHED->value => 'success',
+                GameStatus::CANCELLED->value => 'danger',
+            ])
+            ->setHelp('Status ustawiany automatycznie przez system')
+            ->hideOnForm()
+            ->formatValue(function ($value, Game $game) use ($pageName) {
+                if ($pageName === Crud::PAGE_INDEX) {
+                    $statusLabels = [
+                        GameStatus::DRAFT->value => 'Szkic',
+                        GameStatus::PLANNED->value => 'Planowany',
+                        GameStatus::IN_PROGRESS->value => 'W trakcie',
+                        GameStatus::FINISHED->value => 'Zakończony',
+                        GameStatus::CANCELLED->value => 'Anulowany',
+                    ];
+                    return $statusLabels[$game->getStatus()->value] ?? $game->getStatus()->value;
+                }
+                return $value;
+            });
 
         yield AssociationField::new('teamA', 'Drużyna A')
             ->setColumns(6)
@@ -374,9 +385,7 @@ class GameCrudController extends AbstractCrudController
         }
 
         $game->setStatus(GameStatus::FINISHED);
-
         $game->calculatePoints();
-
         $this->em->flush();
 
         $this->addFlash('success', 'Mecz został zakończony. Punkty: ' .

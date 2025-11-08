@@ -30,7 +30,6 @@ class GameScoresController extends AbstractController
     #[Route('/{id}/edit', name: 'admin_game_scores_edit')]
     public function edit(Game $game): Response
     {
-        // Zmień status na IN_PROGRESS przy pierwszym otwarciu edycji wyników
         if ($game->getStatus() === GameStatus::PLANNED) {
             $game->setStatus(GameStatus::IN_PROGRESS);
             $this->em->flush();
@@ -103,16 +102,7 @@ class GameScoresController extends AbstractController
             }
             $this->em->flush();
 
-            if ($game->isComplete()) {
-                $game->setStatus(GameStatus::FINISHED);
-
-                $game->calculatePoints();
-
-                $this->em->flush();
-                $this->addFlash('success', "✅ Zapisano {$savedCount} wyników! Mecz został zakończony.");
-            } else {
-                $this->addFlash('success', "✅ Zapisano {$savedCount} wyników!");
-            }
+            $this->addFlash('success', "✅ Zapisano {$savedCount} wyników!");
 
         } catch (\Exception $e) {
             $this->addFlash('error', 'Błąd: ' . $e->getMessage());
