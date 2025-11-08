@@ -115,51 +115,31 @@ class GameCrudController extends AbstractCrudController
             ->autocomplete()
             ->setHelp('W jakiej lidze rozgrywany jest mecz');
 
-        if ($pageName === Crud::PAGE_INDEX) {
-            yield TextField::new('status', 'Status')
-                ->formatValue(function ($value, Game $game) {
-                    $statusLabels = [
-                        GameStatus::DRAFT->value => 'Szkic',
-                        GameStatus::PLANNED->value => 'Planowany',
-                        GameStatus::IN_PROGRESS->value => 'W trakcie',
-                        GameStatus::FINISHED->value => 'Zakończony',
-                        GameStatus::CANCELLED->value => 'Anulowany',
-                    ];
+        yield TextField::new('statusDisplay', 'Status')
+            ->setVirtual(true)
+            ->hideOnForm()
+            ->formatValue(function ($value, Game $game) {
+                $statusLabels = [
+                    GameStatus::DRAFT->value => 'Szkic',
+                    GameStatus::PLANNED->value => 'Planowany',
+                    GameStatus::IN_PROGRESS->value => 'W trakcie',
+                    GameStatus::FINISHED->value => 'Zakończony',
+                    GameStatus::CANCELLED->value => 'Anulowany',
+                ];
 
-                    $badges = [
-                        GameStatus::DRAFT->value => 'secondary',
-                        GameStatus::PLANNED->value => 'info',
-                        GameStatus::IN_PROGRESS->value => 'primary',
-                        GameStatus::FINISHED->value => 'success',
-                        GameStatus::CANCELLED->value => 'danger',
-                    ];
-
-                    $label = $statusLabels[$game->getStatus()->value] ?? $game->getStatus()->value;
-                    $badge = $badges[$game->getStatus()->value] ?? 'secondary';
-
-                    return sprintf('<span class="badge badge-%s">%s</span>', $badge, $label);
-                });
-        } else {
-            yield ChoiceField::new('status', 'Status')
-                ->setColumns(12)
-                ->setChoices([
-                    'Szkic' => GameStatus::DRAFT,
-                    'Planowany' => GameStatus::PLANNED,
-                    'W trakcie' => GameStatus::IN_PROGRESS,
-                    'Zakończony' => GameStatus::FINISHED,
-                    'Anulowany' => GameStatus::CANCELLED,
-                ])
-                ->renderExpanded()
-                ->renderAsBadges([
+                $badges = [
                     GameStatus::DRAFT->value => 'secondary',
                     GameStatus::PLANNED->value => 'info',
                     GameStatus::IN_PROGRESS->value => 'primary',
                     GameStatus::FINISHED->value => 'success',
                     GameStatus::CANCELLED->value => 'danger',
-                ])
-                ->setHelp('Status ustawiany automatycznie przez system')
-                ->hideOnForm();
-        }
+                ];
+
+                $label = $statusLabels[$game->getStatus()->value] ?? $game->getStatus()->value;
+                $badge = $badges[$game->getStatus()->value] ?? 'secondary';
+
+                return sprintf('<span class="badge badge-%s">%s</span>', $badge, $label);
+            });
 
         yield AssociationField::new('teamA', 'Drużyna A')
             ->setColumns(6)
@@ -193,19 +173,6 @@ class GameCrudController extends AbstractCrudController
         }
 
         if ($pageName === Crud::PAGE_DETAIL) {
-            yield TextField::new('statusDisplay', 'Status')
-                ->setVirtual(true)
-                ->formatValue(function ($value, Game $game) {
-                    $badges = [
-                        'DRAFT' => '<span class="badge badge-secondary">Szkic</span>',
-                        'PLANNED' => '<span class="badge badge-info">Planowany</span>',
-                        'IN_PROGRESS' => '<span class="badge badge-primary">W trakcie</span>',
-                        'FINISHED' => '<span class="badge badge-success">Zakończony</span>',
-                        'CANCELLED' => '<span class="badge badge-danger">Anulowany</span>',
-                    ];
-                    return $badges[$game->getStatus()->value] ?? $game->getStatus()->value;
-                });
-
             yield TextField::new('gameTypeDisplay', 'Typ gry')
                 ->setVirtual(true)
                 ->formatValue(function ($value, Game $game) {
