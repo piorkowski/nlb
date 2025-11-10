@@ -518,6 +518,31 @@ class Game
         return sprintf('Game (%s)', $this->gameDate?->format('Y-m-d') ?? 'TBD');
     }
 
+    public function getPointsDisplayValue(): string
+    {
+        if ($this->status !== GameStatus::FINISHED || $this->teamAPoints === null) {
+            return '-';
+        }
+
+        if ($this->isTeamGame()) {
+            return $this->teamAPoints . ' : ' . $this->teamBPoints;
+        }
+
+        // Mecz indywidualny - pobierz graczy i ich punkty
+        $players = $this->getAllPlayers();
+        if (count($players) === 2) {
+            return sprintf(
+                '%s (%d) : %s (%d)',
+                $players[0]->getFullName(),
+                $this->getPlayerPoints($players[0]),
+                $players[1]->getFullName(),
+                $this->getPlayerPoints($players[1])
+            );
+        }
+
+        return $this->teamAPoints . ' : ' . $this->teamBPoints;
+    }
+
     public function getPlayersDisplay(): string
     {
         $players = $this->getAllPlayers();

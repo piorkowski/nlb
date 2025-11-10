@@ -12,6 +12,7 @@ use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -28,8 +29,10 @@ class ResetPasswordController extends AbstractController
 
     public function __construct(
         private ResetPasswordHelperInterface $resetPasswordHelper,
-        private EntityManagerInterface $entityManager
-    ) {}
+        private EntityManagerInterface       $entityManager
+    )
+    {
+    }
 
     #[Route('/request', name: 'app_forgot_password_request')]
     public function request(Request $request, MailerInterface $mailer): Response
@@ -137,7 +140,17 @@ class ResetPasswordController extends AbstractController
                 'resetToken' => $resetToken,
             ]);
 
-        $mailer->send($email);
+        try {
+            $mailer->send($email);
+        } catch (\Exception $e) {
+            error_log('Błąd wysyłania emaila: ' . $e->getMessage());
+            $this->addFlash('error', 'Nie udało się wysłać emaila. Spróbuj ponownie później.');
+            return $this->redirectToRoute('app_forgot_password_request');
+        } catch (TransportExceptionInterface $e) {
+            error_log('Błąd wysyłania emaila: ' . $e->getMessage());
+            $this->addFlash('error', 'Nie udało się wysłać emaila. Spróbuj ponownie później.');
+            return $this->redirectToRoute('app_forgot_password_request');
+        }
 
         $this->setTokenObjectInSession($resetToken);
 
