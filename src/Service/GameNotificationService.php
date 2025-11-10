@@ -27,7 +27,7 @@ class GameNotificationService
             }
 
             $email = (new Email())
-                ->from('no-reply@nyska-liga.pl')
+                ->from('no-reply@nyskaligabowlingowa.pl')
                 ->to($player->getEmail())
                 ->subject('Zaplanowano mecz - Nyska Liga Bowlingowa')
                 ->html($this->twig->render('emails/game_scheduled.html.twig', [
@@ -53,7 +53,7 @@ class GameNotificationService
             }
 
             $email = (new Email())
-                ->from('no-reply@nyska-liga.pl')
+                ->from('no-reply@nyskaligabowlingowa.pl')
                 ->to($player->getEmail())
                 ->subject('Mecz anulowany - Nyska Liga Bowlingowa')
                 ->html($this->twig->render('emails/game_cancelled.html.twig', [
@@ -79,7 +79,7 @@ class GameNotificationService
             }
 
             $email = (new Email())
-                ->from('no-reply@nyska-liga.pl')
+                ->from('no-reply@nyskaligabowlingowa.pl')
                 ->to($player->getEmail())
                 ->subject('Zmiana terminu meczu - Nyska Liga Bowlingowa')
                 ->html($this->twig->render('emails/game_date_changed.html.twig', [

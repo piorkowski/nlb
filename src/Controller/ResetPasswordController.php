@@ -132,7 +132,7 @@ class ResetPasswordController extends AbstractController
         }
 
         $email = (new TemplatedEmail())
-            ->from(new Address('no-reply@nyska-liga.pl', 'Nyska Liga Bowlingowa'))
+            ->from(new Address('no-reply@nyskaligabowlingowa.pl', 'Nyska Liga Bowlingowa'))
             ->to($user->getEmail())
             ->subject('Reset hasła')
             ->htmlTemplate('reset_password/email.html.twig')
