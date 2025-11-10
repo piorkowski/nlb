@@ -47,7 +47,7 @@
                                         <label class="form-label">Gracz A</label>
                                         <select name="individual[playerA]" class="form-select" required>
                                             <option value="">Wybierz gracza...</option>
-                                            {% for player in players %}
+                                            {% for player in game.league.players %}
                                                 <option value="{{ player.id }}">{{ player.fullName }}</option>
                                             {% endfor %}
                                         </select>
@@ -58,7 +58,7 @@
                                         <label class="form-label">Gracz B</label>
                                         <select name="individual[playerB]" class="form-select" required>
                                             <option value="">Wybierz gracza...</option>
-                                            {% for player in players %}
+                                            {% for player in game.league.players %}
                                                 <option value="{{ player.id }}">{{ player.fullName }}</option>
                                             {% endfor %}
                                         </select>
