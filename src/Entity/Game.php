@@ -517,4 +517,15 @@ class Game
 
         return sprintf('Game (%s)', $this->gameDate?->format('Y-m-d') ?? 'TBD');
     }
+
+    public function getPlayersDisplay(): string
+    {
+        $players = $this->getAllPlayers();
+
+        if (empty($players)) {
+            return 'Brak graczy';
+        }
+
+        return implode(', ', array_map(fn($p) => $p->getFullName(), $players));
+    }
 }

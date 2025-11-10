@@ -153,7 +153,7 @@ class GameCrudController extends AbstractCrudController
 
         if ($pageName === Crud::PAGE_INDEX) {
             yield TextField::new('playersDisplay', 'Gracze')
-                ->setVirtual(true)
+                ->onlyOnIndex()
                 ->formatValue(function ($value, Game $game) {
                     $players = $game->getAllPlayers();
 
@@ -165,11 +165,9 @@ class GameCrudController extends AbstractCrudController
 
                     return implode(', ', $names);
                 });
-        }
 
-        if ($pageName === Crud::PAGE_INDEX) {
             yield TextField::new('pointsDisplay', 'Punkty')
-                ->setVirtual(true)
+                ->onlyOnIndex()
                 ->formatValue(function ($value, Game $game) {
                     if ($game->getStatus() !== GameStatus::FINISHED || $game->getTeamAPoints() === null) {
                         return '<span class="text-muted">-</span>';
@@ -258,24 +256,23 @@ class GameCrudController extends AbstractCrudController
                             $game->getTeamB()?->getName(),
                             $game->getTeamBPoints()
                         );
-                    }
-
-                    $players = $game->getAllPlayers();
-                    if (count($players) === 2) {
-                        return sprintf(
-                            '<strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span> | <strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span>',
-                            $players[0]->getFullName(),
-                            $game->getPlayerPoints($players[0]),
-                            $players[1]->getFullName(),
-                            $game->getPlayerPoints($players[1])
-                        );
+                    } else {
+                        $players = $game->getAllPlayers();
+                        if (count($players) === 2) {
+                            return sprintf(
+                                '<strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span> | <strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span>',
+                                $players[0]->getFullName(),
+                                $game->getPlayerPoints($players[0]),
+                                $players[1]->getFullName(),
+                                $game->getPlayerPoints($players[1])
+                            );
+                        }
                     }
 
                     return '<span class="text-muted">-</span>';
                 });
         }
     }
-
 
     public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
     {
