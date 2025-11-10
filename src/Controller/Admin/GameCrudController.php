@@ -151,10 +151,21 @@ class GameCrudController extends AbstractCrudController
             ->autocomplete()
             ->setHelp('Zostaw puste dla gry indywidualnej');
 
-        yield TextareaField::new('notes', 'Notatki')
-            ->setColumns(12)
-            ->hideOnIndex()
-            ->setHelp('Dodatkowe informacje o meczu');
+        if ($pageName === Crud::PAGE_INDEX) {
+            yield TextField::new('playersDisplay', 'Gracze')
+                ->setVirtual(true)
+                ->formatValue(function ($value, Game $game) {
+                    $players = $game->getAllPlayers();
+
+                    if (empty($players)) {
+                        return '<span class="text-muted">Brak graczy</span>';
+                    }
+
+                    $names = array_map(fn($player) => $player->getFullName(), $players);
+
+                    return implode(', ', $names);
+                });
+        }
 
         if ($pageName === Crud::PAGE_INDEX) {
             yield TextField::new('pointsDisplay', 'Punkty')
@@ -171,6 +182,11 @@ class GameCrudController extends AbstractCrudController
                     );
                 });
         }
+
+        yield TextareaField::new('notes', 'Notatki')
+            ->setColumns(12)
+            ->hideOnIndex()
+            ->setHelp('Dodatkowe informacje o meczu');
 
         if ($pageName === Crud::PAGE_DETAIL) {
             yield TextField::new('gameTypeDisplay', 'Typ gry')
@@ -242,17 +258,17 @@ class GameCrudController extends AbstractCrudController
                             $game->getTeamB()?->getName(),
                             $game->getTeamBPoints()
                         );
-                    } else {
-                        $players = $game->getAllPlayers();
-                        if (count($players) === 2) {
-                            return sprintf(
-                                '<strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span> | <strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span>',
-                                $players[0]->getFullName(),
-                                $game->getPlayerPoints($players[0]),
-                                $players[1]->getFullName(),
-                                $game->getPlayerPoints($players[1])
-                            );
-                        }
+                    }
+
+                    $players = $game->getAllPlayers();
+                    if (count($players) === 2) {
+                        return sprintf(
+                            '<strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span> | <strong>%s:</strong> <span class="badge badge-success" style="font-size: 1.2rem;">%d pkt</span>',
+                            $players[0]->getFullName(),
+                            $game->getPlayerPoints($players[0]),
+                            $players[1]->getFullName(),
+                            $game->getPlayerPoints($players[1])
+                        );
                     }
 
                     return '<span class="text-muted">-</span>';
