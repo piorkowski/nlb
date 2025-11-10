@@ -17,7 +17,6 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Csrf\TokenGenerator\TokenGeneratorInterface;
 use SymfonyCasts\Bundle\ResetPassword\Controller\ResetPasswordControllerTrait;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
@@ -29,13 +28,14 @@ class ResetPasswordController extends AbstractController
 
     public function __construct(
         private ResetPasswordHelperInterface $resetPasswordHelper,
-        private EntityManagerInterface       $entityManager
+        private EntityManagerInterface       $entityManager,
+        private MailerInterface $mailer,
     )
     {
     }
 
     #[Route('/request', name: 'app_forgot_password_request')]
-    public function request(Request $request, MailerInterface $mailer): Response
+    public function request(Request $request): Response
     {
         $form = $this->createForm(ResetPasswordRequestFormType::class);
         $form->handleRequest($request);
@@ -43,7 +43,6 @@ class ResetPasswordController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             return $this->processSendingPasswordResetEmail(
                 $form->get('email')->getData(),
-                $mailer
             );
         }
 
@@ -115,7 +114,7 @@ class ResetPasswordController extends AbstractController
         ]);
     }
 
-    private function processSendingPasswordResetEmail(string $emailFormData, MailerInterface $mailer): Response
+    private function processSendingPasswordResetEmail(string $emailFormData): Response
     {
         $user = $this->entityManager->getRepository(User::class)->findOneBy([
             'email' => $emailFormData,
@@ -141,7 +140,7 @@ class ResetPasswordController extends AbstractController
             ]);
 
         try {
-            $mailer->send($email);
+            $this->mailer->send($email);
         } catch (\Exception $e) {
             error_log('Błąd wysyłania emaila: ' . $e->getMessage());
             $this->addFlash('error', 'Nie udało się wysłać emaila. Spróbuj ponownie później.');
