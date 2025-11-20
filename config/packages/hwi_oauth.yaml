@@ -18,12 +18,3 @@ hwi_oauth:
             scope: "email profile"
             options:
                 access_type: offline
-
-    connect:
-        account_connector: app.oauth_user_provider
-
-    fosub:
-        username_iterations: 30
-        properties:
-            facebook: facebookId
-            google: googleId
