@@ -60,22 +60,42 @@ class GameCrudController extends AbstractCrudController
     {
         $enterScores = Action::new('enterScores', 'Wpisz wyniki', 'fa fa-edit')
             ->linkToRoute('admin_game_scores_edit', fn(Game $game) => ['id' => $game->getId()])
-            ->displayIf(fn(Game $game) => !$game->getFrames()->isEmpty() && $game->getStatus() !== GameStatus::FINISHED && $game->getStatus() !== GameStatus::CANCELLED)
+            ->displayIf(fn(Game $game) =>
+                $this->isGranted('ROLE_ADMIN') &&
+                !$game->getFrames()->isEmpty() &&
+                $game->getStatus() !== GameStatus::FINISHED &&
+                $game->getStatus() !== GameStatus::CANCELLED
+            )
             ->setCssClass('btn btn-warning');
 
         $generateGame = Action::new('generateGame', 'Generuj mecz', 'fa fa-magic')
             ->linkToCrudAction('generateGame')
-            ->displayIf(fn(Game $game) => $game->getFrames()->isEmpty() && $game->getStatus() === GameStatus::DRAFT)
+            ->displayIf(fn(Game $game) =>
+                $this->isGranted('ROLE_ADMIN') &&
+                !$game->getFrames()->isEmpty() &&
+                $game->getStatus() !== GameStatus::FINISHED &&
+                $game->getStatus() !== GameStatus::CANCELLED
+            )
             ->setCssClass('btn btn-success');
 
         $finishGame = Action::new('finishGame', 'Zakończ mecz', 'fa fa-check-circle')
             ->linkToCrudAction('finishGame')
-            ->displayIf(fn(Game $game) => $game->getStatus() === GameStatus::IN_PROGRESS && $game->isComplete())
+            ->displayIf(fn(Game $game) =>
+                $this->isGranted('ROLE_ADMIN') &&
+                !$game->getFrames()->isEmpty() &&
+                $game->getStatus() !== GameStatus::FINISHED &&
+                $game->getStatus() !== GameStatus::CANCELLED
+            )
             ->setCssClass('btn btn-primary');
 
         $cancelGame = Action::new('cancelGame', 'Anuluj mecz', 'fa fa-ban')
             ->linkToCrudAction('cancelGame')
-            ->displayIf(fn(Game $game) => $game->getStatus() !== GameStatus::FINISHED && $game->getStatus() !== GameStatus::CANCELLED)
+            ->displayIf(fn(Game $game) =>
+                $this->isGranted('ROLE_ADMIN') &&
+                !$game->getFrames()->isEmpty() &&
+                $game->getStatus() !== GameStatus::FINISHED &&
+                $game->getStatus() !== GameStatus::CANCELLED
+            )
             ->setCssClass('btn btn-danger');
 
         $actions = $actions
@@ -284,6 +304,8 @@ class GameCrudController extends AbstractCrudController
 
     public function generateGame(AdminContext $context): Response
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $entityId = $context->getRequest()->query->get('entityId');
 
         if (!$entityId) {

@@ -112,6 +112,11 @@
                         </tbody>
                     </table>
                 </div>
+
+                {# Paginacja #}
+                <div class="d-flex justify-content-center mt-4">
+                    {{ knp_pagination_render(games) }}
+                </div>
             {% else %}
                 <div class="alert alert-info">
                     <i class="fa fa-info-circle"></i> Brak meczy do wyświetlenia
