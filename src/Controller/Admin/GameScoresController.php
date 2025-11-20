@@ -15,8 +15,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/game-scores')]
+#[IsGranted('ROLE_ADMIN')]
 class GameScoresController extends AbstractController
 {
     public function __construct(
@@ -28,6 +30,7 @@ class GameScoresController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'admin_game_scores_edit')]
+
     public function edit(Game $game): Response
     {
         if ($game->getStatus() === GameStatus::PLANNED) {

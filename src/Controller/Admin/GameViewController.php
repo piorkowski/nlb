@@ -15,7 +15,6 @@ class GameViewController extends AbstractController
 {
     public function __construct(
         private GameRepository $gameRepository,
-        private AdminUrlGenerator $adminUrlGenerator
     ) {}
 
     #[Route('/team', name: 'admin_games_team')]
