@@ -26,3 +26,8 @@ services:
             $properties:
                 'facebook': 'facebook'
                 'google': 'google'
+
+    app.oauth_user_provider:
+        class: App\Security\OAuthUserProvider
+        arguments:
+            $em: '@doctrine.orm.entity_manager'
