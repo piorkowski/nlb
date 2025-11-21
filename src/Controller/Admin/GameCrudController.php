@@ -62,9 +62,7 @@ class GameCrudController extends AbstractCrudController
             ->linkToRoute('admin_game_scores_edit', fn(Game $game) => ['id' => $game->getId()])
             ->displayIf(fn(Game $game) =>
                 $this->isGranted('ROLE_ADMIN') &&
-                !$game->getFrames()->isEmpty() &&
-                $game->getStatus() !== GameStatus::FINISHED &&
-                $game->getStatus() !== GameStatus::CANCELLED
+                $game->getStatus() === GameStatus::IN_PROGRESS
             )
             ->setCssClass('btn btn-warning');
 
@@ -72,9 +70,8 @@ class GameCrudController extends AbstractCrudController
             ->linkToCrudAction('generateGame')
             ->displayIf(fn(Game $game) =>
                 $this->isGranted('ROLE_ADMIN') &&
-                !$game->getFrames()->isEmpty() &&
-                $game->getStatus() !== GameStatus::FINISHED &&
-                $game->getStatus() !== GameStatus::CANCELLED
+                $game->getFrames()->isEmpty() &&
+                $game->getStatus() === GameStatus::DRAFT
             )
             ->setCssClass('btn btn-success');
 
@@ -82,9 +79,7 @@ class GameCrudController extends AbstractCrudController
             ->linkToCrudAction('finishGame')
             ->displayIf(fn(Game $game) =>
                 $this->isGranted('ROLE_ADMIN') &&
-                !$game->getFrames()->isEmpty() &&
-                $game->getStatus() !== GameStatus::FINISHED &&
-                $game->getStatus() !== GameStatus::CANCELLED
+                $game->getStatus() === GameStatus::IN_PROGRESS
             )
             ->setCssClass('btn btn-primary');
 
@@ -92,9 +87,8 @@ class GameCrudController extends AbstractCrudController
             ->linkToCrudAction('cancelGame')
             ->displayIf(fn(Game $game) =>
                 $this->isGranted('ROLE_ADMIN') &&
-                !$game->getFrames()->isEmpty() &&
-                $game->getStatus() !== GameStatus::FINISHED &&
-                $game->getStatus() !== GameStatus::CANCELLED
+                $game->getStatus() === GameStatus::DRAFT &&
+                $game->getStatus() !== GameStatus::PLANNED
             )
             ->setCssClass('btn btn-danger');
 
